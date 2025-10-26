@@ -24,9 +24,7 @@ musicRoutes.get('/:artistId', async (req, res, next) => {
     }
 
     const lidarrApi = new LidarrAPI({
-      url: lidarrSettings.useSsl
-        ? `https://${lidarrSettings.hostname}:${lidarrSettings.port}${lidarrSettings.baseUrl}`
-        : `http://${lidarrSettings.hostname}:${lidarrSettings.port}${lidarrSettings.baseUrl}`,
+      url: LidarrAPI.buildUrl(lidarrSettings, '/api/v1'),
       apiKey: lidarrSettings.apiKey,
     });
 
@@ -80,9 +78,7 @@ musicRoutes.get('/:artistId/albums', async (req, res, next) => {
     }
 
     const lidarrApi = new LidarrAPI({
-      url: lidarrSettings.useSsl
-        ? `https://${lidarrSettings.hostname}:${lidarrSettings.port}${lidarrSettings.baseUrl}`
-        : `http://${lidarrSettings.hostname}:${lidarrSettings.port}${lidarrSettings.baseUrl}`,
+      url: LidarrAPI.buildUrl(lidarrSettings, '/api/v1'),
       apiKey: lidarrSettings.apiKey,
     });
 

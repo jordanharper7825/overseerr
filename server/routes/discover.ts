@@ -839,11 +839,16 @@ discoverRoutes.get('/music', async (req, res, next) => {
       });
     }
 
-    const baseUrl = lidarrSettings.baseUrl || '';
+    const apiUrl = LidarrAPI.buildUrl(lidarrSettings, '/api/v1');
+
+    logger.info('Connecting to Lidarr API', {
+      label: 'API',
+      url: apiUrl,
+      endpoint: `${apiUrl}/artist`,
+    });
+
     const lidarrApi = new LidarrAPI({
-      url: lidarrSettings.useSsl
-        ? `https://${lidarrSettings.hostname}:${lidarrSettings.port}${baseUrl}`
-        : `http://${lidarrSettings.hostname}:${lidarrSettings.port}${baseUrl}`,
+      url: apiUrl,
       apiKey: lidarrSettings.apiKey,
     });
 

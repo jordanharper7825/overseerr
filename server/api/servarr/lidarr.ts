@@ -100,6 +100,21 @@ class LidarrAPI extends ServarrBase<{ artistId?: number; albumId?: number }> {
   public getArtists = async (): Promise<LidarrArtist[]> => {
     try {
       const response = await this.axios.get<LidarrArtist[]>('/artist');
+
+      // Check if we got HTML instead of JSON (common API misconfiguration)
+      if (typeof response.data === 'string') {
+        const dataStr = response.data as string;
+        throw new Error(
+          `[Lidarr] API returned HTML instead of JSON. This usually means the base URL is incorrect. Response: ${dataStr.substring(0, 200)}`
+        );
+      }
+
+      if (!Array.isArray(response.data)) {
+        throw new Error(
+          `[Lidarr] API returned unexpected data type: ${typeof response.data}`
+        );
+      }
+
       return response.data;
     } catch (e) {
       throw new Error(`[Lidarr] Failed to retrieve artists: ${e.message}`);
