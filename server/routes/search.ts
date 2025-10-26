@@ -1,8 +1,11 @@
+import LidarrAPI from '@server/api/servarr/lidarr';
 import TheMovieDb from '@server/api/themoviedb';
 import type { TmdbSearchMultiResponse } from '@server/api/themoviedb/interfaces';
 import Media from '@server/entity/Media';
 import { findSearchProvider } from '@server/lib/search';
+import { getSettings } from '@server/lib/settings';
 import logger from '@server/logger';
+import { mapAlbumResult, mapArtistResult } from '@server/models/Music';
 import { mapSearchResults } from '@server/models/Search';
 import { Router } from 'express';
 
@@ -98,6 +101,62 @@ searchRoutes.get('/company', async (req, res, next) => {
     return next({
       status: 500,
       message: 'Unable to retrieve company search results.',
+    });
+  }
+});
+
+searchRoutes.get('/music', async (req, res, next) => {
+  const settings = getSettings();
+
+  try {
+    const lidarrSettings = settings.lidarr.find((lidarr) => lidarr.isDefault);
+
+    if (!lidarrSettings) {
+      return res.status(200).json({
+        page: 1,
+        totalPages: 1,
+        totalResults: 0,
+        results: [],
+      });
+    }
+
+    const apiUrl = LidarrAPI.buildUrl(lidarrSettings, '/api/v1');
+    const lidarrApi = new LidarrAPI({
+      url: apiUrl,
+      apiKey: lidarrSettings.apiKey,
+    });
+
+    const queryString = req.query.query as string;
+
+    // Search for both artists and albums
+    const [artists, albums] = await Promise.all([
+      lidarrApi.searchArtist(queryString),
+      lidarrApi.searchAlbum(queryString),
+    ]);
+
+    const mappedArtists = artists.map((artist) =>
+      mapArtistResult(artist, undefined, apiUrl)
+    );
+
+    const mappedAlbums = albums.map((album) => mapAlbumResult(album));
+
+    const results = [...mappedArtists, ...mappedAlbums];
+
+    return res.status(200).json({
+      page: 1,
+      totalPages: 1,
+      totalResults: results.length,
+      results,
+    });
+  } catch (e) {
+    logger.debug('Something went wrong retrieving music search results', {
+      label: 'API',
+      errorMessage: e.message,
+      query: req.query.query,
+    });
+    return next({
+      status: 500,
+      message: 'Unable to retrieve music search results.',
     });
   }
 });

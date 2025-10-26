@@ -79,27 +79,21 @@ musicRoutes.get('/:artistId/albums', async (req, res, next) => {
       });
     }
 
+    const apiUrl = LidarrAPI.buildUrl(lidarrSettings, '/api/v1');
     const lidarrApi = new LidarrAPI({
-      url: LidarrAPI.buildUrl(lidarrSettings, '/api/v1'),
+      url: apiUrl,
       apiKey: lidarrSettings.apiKey,
     });
 
-    // Get albums by fetching the artist and reading their albums
-    const artist = await lidarrApi.getArtist({
-      id: Number(req.params.artistId),
-    });
+    const albums = await lidarrApi.getAlbumsByArtist(
+      Number(req.params.artistId)
+    );
 
-    if (!artist) {
-      return next({
-        status: 404,
-        message: 'Artist not found.',
-      });
-    }
+    const mappedAlbums = albums.map((album) =>
+      mapAlbumResult(album)
+    );
 
-    // Lidarr artists don't directly have albums in the getArtist response
-    // For now, return an empty array - albums would need to be fetched separately
-    // from Lidarr's album endpoint with artistId filter
-    return res.status(200).json([]);
+    return res.status(200).json(mappedAlbums);
   } catch (e) {
     logger.debug('Something went wrong retrieving albums for artist', {
       label: 'API',
