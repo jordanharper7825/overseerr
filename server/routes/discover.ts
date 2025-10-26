@@ -837,7 +837,22 @@ discoverRoutes.get('/music', async (req, res, next) => {
     });
 
     // Get all artists from Lidarr (this will be popular artists already in the library)
-    const artists = await lidarrApi.getArtists();
+    let artists = [];
+    try {
+      artists = await lidarrApi.getArtists();
+    } catch (apiError) {
+      logger.warn('Failed to fetch artists from Lidarr', {
+        label: 'API',
+        errorMessage: apiError.message,
+      });
+      // Return empty results if Lidarr connection fails
+      return res.status(200).json({
+        page: 1,
+        totalPages: 1,
+        totalResults: 0,
+        results: [],
+      });
+    }
 
     // Sort by album count (popularity proxy) and take top results
     const sortedArtists = [...artists].sort(
@@ -871,13 +886,16 @@ discoverRoutes.get('/music', async (req, res, next) => {
       ),
     });
   } catch (e) {
-    logger.debug('Something went wrong retrieving music', {
+    logger.error('Something went wrong retrieving music', {
       label: 'API',
       errorMessage: e.message,
     });
-    return next({
-      status: 500,
-      message: 'Unable to retrieve music.',
+    // Return empty results instead of 500 error
+    return res.status(200).json({
+      page: 1,
+      totalPages: 1,
+      totalResults: 0,
+      results: [],
     });
   }
 });
