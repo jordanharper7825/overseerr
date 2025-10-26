@@ -75,7 +75,8 @@ export const mapArtistResult = (
 
 export const mapAlbumResult = (
   albumResult: LidarrAlbum,
-  media?: Media
+  media?: Media,
+  serverUrl?: string
 ): AlbumResult => {
   const coverImage = albumResult.images?.find((img) => img.coverType === 'cover');
 
@@ -84,6 +85,13 @@ export const mapAlbumResult = (
     (sum, release) => sum + (release.trackCount || 0),
     0
   );
+
+  // Convert relative image URLs to full URLs
+  let posterPath = coverImage?.url;
+  if (posterPath && serverUrl && posterPath.startsWith('/')) {
+    const baseUrl = serverUrl.replace('/api/v1', '');
+    posterPath = `${baseUrl}${posterPath}`;
+  }
 
   return {
     id: albumResult.id,
@@ -97,7 +105,7 @@ export const mapAlbumResult = (
     albumType: albumResult.albumType,
     duration: albumResult.duration,
     trackCount: totalTracks,
-    posterPath: coverImage?.url,
+    posterPath,
     mediaInfo: media,
   };
 };

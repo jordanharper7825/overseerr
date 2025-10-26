@@ -90,7 +90,7 @@ musicRoutes.get('/:artistId/albums', async (req, res, next) => {
     );
 
     const mappedAlbums = albums.map((album) =>
-      mapAlbumResult(album)
+      mapAlbumResult(album, undefined, apiUrl)
     );
 
     return res.status(200).json(mappedAlbums);

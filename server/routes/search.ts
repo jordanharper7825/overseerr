@@ -138,7 +138,7 @@ searchRoutes.get('/music', async (req, res, next) => {
       mapArtistResult(artist, undefined, apiUrl)
     );
 
-    const mappedAlbums = albums.map((album) => mapAlbumResult(album));
+    const mappedAlbums = albums.map((album) => mapAlbumResult(album, undefined, apiUrl));
 
     const results = [...mappedArtists, ...mappedAlbums];
 
