@@ -198,6 +198,20 @@ class LidarrAPI extends ServarrBase<{ artistId?: number; albumId?: number }> {
     }
   }
 
+  public async getAlbum(albumId: number): Promise<LidarrAlbum | null> {
+    try {
+      const response = await this.axios.get<LidarrAlbum>(`/album/${albumId}`);
+      return response.data;
+    } catch (e) {
+      logger.error('Error retrieving album by ID', {
+        label: 'Lidarr API',
+        errorMessage: e.message,
+        albumId,
+      });
+      return null;
+    }
+  }
+
   public searchArtist = async (term: string): Promise<LidarrArtist[]> => {
     try {
       const response = await this.axios.get<LidarrArtist[]>('/artist/lookup', {

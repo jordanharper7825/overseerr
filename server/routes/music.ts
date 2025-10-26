@@ -40,6 +40,14 @@ musicRoutes.get('/:artistId', async (req, res, next) => {
       });
     }
 
+    logger.info('Artist data from Lidarr', {
+      label: 'API',
+      artistName: artist.artistName,
+      hasOverview: !!artist.overview,
+      overviewLength: artist.overview?.length || 0,
+      overview: artist.overview?.substring(0, 100),
+    });
+
     const media = await Media.getRelatedMedia([artist.id]);
 
     return res.status(200).json(
@@ -103,6 +111,50 @@ musicRoutes.get('/:artistId/albums', async (req, res, next) => {
     return next({
       status: 500,
       message: 'Unable to retrieve albums for artist.',
+    });
+  }
+});
+
+musicRoutes.get('/album/:albumId', async (req, res, next) => {
+  const settings = getSettings();
+
+  try {
+    const lidarrSettings = settings.lidarr.find(
+      (lidarr) => lidarr.isDefault
+    );
+
+    if (!lidarrSettings) {
+      return next({
+        status: 404,
+        message: 'No Lidarr instance configured.',
+      });
+    }
+
+    const apiUrl = LidarrAPI.buildUrl(lidarrSettings, '/api/v1');
+    const lidarrApi = new LidarrAPI({
+      url: apiUrl,
+      apiKey: lidarrSettings.apiKey,
+    });
+
+    const album = await lidarrApi.getAlbum(Number(req.params.albumId));
+
+    if (!album) {
+      return next({
+        status: 404,
+        message: 'Album not found.',
+      });
+    }
+
+    return res.status(200).json(mapAlbumResult(album, undefined, apiUrl));
+  } catch (e) {
+    logger.debug('Something went wrong retrieving album', {
+      label: 'API',
+      errorMessage: e.message,
+      albumId: req.params.albumId,
+    });
+    return next({
+      status: 500,
+      message: 'Unable to retrieve album.',
     });
   }
 });

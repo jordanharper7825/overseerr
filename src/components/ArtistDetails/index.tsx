@@ -4,6 +4,7 @@ import PageTitle from '@app/components/Common/PageTitle';
 import Tag from '@app/components/Common/Tag';
 import Error from '@app/pages/_error';
 import type { ArtistResult, AlbumResult } from '@server/models/Music';
+import Link from 'next/link';
 import { defineMessages, useIntl } from 'react-intl';
 import useSWR from 'swr';
 
@@ -130,35 +131,34 @@ const ArtistDetails = ({ artist }: ArtistDetailsProps) => {
           {albumData && albumData.length > 0 && (
             <div className="mt-4 grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6">
               {albumData.map((album) => (
-                <div
-                  key={album.id}
-                  className="cursor-pointer rounded-lg bg-gray-800 p-2 transition hover:bg-gray-700"
-                >
-                  {album.posterPath && (
-                    <CachedImage
-                      src={album.posterPath}
-                      alt={album.title}
-                      width={200}
-                      height={200}
-                      className="rounded"
-                    />
-                  )}
-                  {!album.posterPath && (
-                    <div className="flex h-48 w-full items-center justify-center rounded bg-gray-700">
-                      <span className="text-xs text-gray-400">No Image</span>
-                    </div>
-                  )}
-                  <div className="mt-2">
-                    <h3 className="text-sm font-medium text-white line-clamp-2">
-                      {album.title}
-                    </h3>
-                    {album.trackCount && (
-                      <p className="text-xs text-gray-400">
-                        {album.trackCount} {album.trackCount === 1 ? 'track' : 'tracks'}
-                      </p>
+                <Link key={album.id} href={`/album/${album.id}`}>
+                  <a className="cursor-pointer rounded-lg bg-gray-800 p-2 transition hover:bg-gray-700 block">
+                    {album.posterPath && (
+                      <CachedImage
+                        src={album.posterPath}
+                        alt={album.title}
+                        width={200}
+                        height={200}
+                        className="rounded"
+                      />
                     )}
-                  </div>
-                </div>
+                    {!album.posterPath && (
+                      <div className="flex h-48 w-full items-center justify-center rounded bg-gray-700">
+                        <span className="text-xs text-gray-400">No Image</span>
+                      </div>
+                    )}
+                    <div className="mt-2">
+                      <h3 className="text-sm font-medium text-white line-clamp-2">
+                        {album.title}
+                      </h3>
+                      {album.trackCount && (
+                        <p className="text-xs text-gray-400">
+                          {album.trackCount} {album.trackCount === 1 ? 'track' : 'tracks'}
+                        </p>
+                      )}
+                    </div>
+                  </a>
+                </Link>
               ))}
             </div>
           )}
