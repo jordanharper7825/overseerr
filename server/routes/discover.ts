@@ -853,13 +853,16 @@ discoverRoutes.get('/music', async (req, res, next) => {
       artists = await lidarrApi.getArtists();
       logger.info(`Fetched ${artists.length} artists from Lidarr`, {
         label: 'API',
-        sampleArtist: artists[0] ? {
-          id: artists[0].id,
-          artistName: artists[0].artistName,
-          hasImages: !!artists[0].images,
-          hasStatistics: !!artists[0].statistics,
-        } : 'no artists',
+        totalCount: artists.length,
       });
+
+      // Log first artist in full detail to debug empty data issue
+      if (artists[0]) {
+        logger.info('First artist raw data:', {
+          label: 'API',
+          rawArtist: JSON.stringify(artists[0]),
+        });
+      }
     } catch (apiError) {
       logger.warn('Failed to fetch artists from Lidarr', {
         label: 'API',
@@ -891,19 +894,29 @@ discoverRoutes.get('/music', async (req, res, next) => {
       paginatedArtists.map((artist) => artist.id)
     );
 
+    const mappedResults = paginatedArtists.map((artist) =>
+      mapArtistResult(
+        artist,
+        media.find(
+          (m) =>
+            m.tmdbId === artist.id && m.mediaType === MediaType.MUSIC
+        )
+      )
+    );
+
+    // Log first mapped result to see what's being returned
+    if (mappedResults[0]) {
+      logger.info('First mapped result:', {
+        label: 'API',
+        mappedResult: JSON.stringify(mappedResults[0]),
+      });
+    }
+
     return res.status(200).json({
       page,
       totalPages: Math.ceil(sortedArtists.length / itemsPerPage),
       totalResults: sortedArtists.length,
-      results: paginatedArtists.map((artist) =>
-        mapArtistResult(
-          artist,
-          media.find(
-            (m) =>
-              m.tmdbId === artist.id && m.mediaType === MediaType.MUSIC
-          )
-        )
-      ),
+      results: mappedResults,
     });
   } catch (e) {
     logger.error('Something went wrong retrieving music', {
