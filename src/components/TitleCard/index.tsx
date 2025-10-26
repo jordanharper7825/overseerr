@@ -70,7 +70,7 @@ const TitleCard = ({
 
   const closeModal = useCallback(() => setShowRequestModal(false), []);
 
-  const showRequestButton = hasPermission(
+  const showRequestButton = mediaType !== 'artist' && hasPermission(
     [
       Permission.REQUEST,
       mediaType === 'movie' || mediaType === 'collection'
@@ -85,20 +85,22 @@ const TitleCard = ({
       className={canExpand ? 'w-full' : 'w-36 sm:w-36 md:w-44'}
       data-testid="title-card"
     >
-      <RequestModal
-        tmdbId={id}
-        show={showRequestModal}
-        type={
-          mediaType === 'movie'
-            ? 'movie'
-            : mediaType === 'collection'
-            ? 'collection'
-            : 'tv'
-        }
-        onComplete={requestComplete}
-        onUpdating={requestUpdating}
-        onCancel={closeModal}
-      />
+      {mediaType !== 'artist' && (
+        <RequestModal
+          tmdbId={id}
+          show={showRequestModal}
+          type={
+            mediaType === 'movie'
+              ? 'movie'
+              : mediaType === 'collection'
+              ? 'collection'
+              : 'tv'
+          }
+          onComplete={requestComplete}
+          onUpdating={requestUpdating}
+          onCancel={closeModal}
+        />
+      )}
       <div
         className={`relative transform-gpu cursor-default overflow-hidden rounded-xl bg-gray-800 bg-cover outline-none ring-1 transition duration-300 ${
           showDetail
@@ -140,6 +142,8 @@ const TitleCard = ({
               className={`pointer-events-none z-40 rounded-full border bg-opacity-80 shadow-md ${
                 mediaType === 'movie' || mediaType === 'collection'
                   ? 'border-blue-500 bg-blue-600'
+                  : mediaType === 'artist'
+                  ? 'border-green-500 bg-green-600'
                   : 'border-purple-600 bg-purple-600'
               }`}
             >
@@ -148,6 +152,8 @@ const TitleCard = ({
                   ? intl.formatMessage(globalMessages.movie)
                   : mediaType === 'collection'
                   ? intl.formatMessage(globalMessages.collection)
+                  : mediaType === 'artist'
+                  ? 'Artist'
                   : intl.formatMessage(globalMessages.tvshow)}
               </div>
             </div>

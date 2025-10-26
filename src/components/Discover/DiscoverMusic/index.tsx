@@ -1,16 +1,43 @@
 import Header from '@app/components/Common/Header';
+import ListView from '@app/components/Common/ListView';
 import PageTitle from '@app/components/Common/PageTitle';
+import useDiscover from '@app/hooks/useDiscover';
+import Error from '@app/pages/_error';
 import { defineMessages, useIntl } from 'react-intl';
 
 const messages = defineMessages({
   discovermusic: 'Music',
-  comingsoon: 'Music discovery coming soon!',
-  description:
-    'Browse and discover music will be available here. Music API integration is in development.',
 });
+
+interface ArtistResult {
+  id: number;
+  mediaType: 'artist';
+  name: string;
+  foreignId: string;
+  overview: string;
+  posterPath?: string;
+  disambiguation?: string;
+  artistType?: string;
+  albumCount?: number;
+}
 
 const DiscoverMusic = () => {
   const intl = useIntl();
+
+  const {
+    isLoadingInitialData,
+    isEmpty,
+    isLoadingMore,
+    isReachingEnd,
+    titles,
+    fetchMore,
+    error,
+  } = useDiscover<ArtistResult>('/api/v1/discover/music');
+
+  if (error) {
+    return <Error statusCode={500} />;
+  }
+
   const title = intl.formatMessage(messages.discovermusic);
 
   return (
@@ -19,16 +46,15 @@ const DiscoverMusic = () => {
       <div className="mb-4">
         <Header>{title}</Header>
       </div>
-      <div className="flex flex-col items-center justify-center py-24">
-        <div className="text-center">
-          <h2 className="mb-4 text-2xl font-bold">
-            {intl.formatMessage(messages.comingsoon)}
-          </h2>
-          <p className="text-gray-400">
-            {intl.formatMessage(messages.description)}
-          </p>
-        </div>
-      </div>
+      <ListView
+        items={titles}
+        isEmpty={isEmpty}
+        isLoading={
+          isLoadingInitialData || (isLoadingMore && (titles?.length ?? 0) > 0)
+        }
+        isReachingEnd={isReachingEnd}
+        onScrollBottom={fetchMore}
+      />
     </>
   );
 };

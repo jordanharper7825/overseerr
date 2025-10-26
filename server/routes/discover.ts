@@ -1,4 +1,5 @@
 import PlexTvAPI from '@server/api/plextv';
+import LidarrAPI from '@server/api/servarr/lidarr';
 import type { SortOptions } from '@server/api/themoviedb';
 import TheMovieDb from '@server/api/themoviedb';
 import type { TmdbKeyword } from '@server/api/themoviedb/interfaces';
@@ -13,6 +14,7 @@ import type {
 import { getSettings } from '@server/lib/settings';
 import logger from '@server/logger';
 import { mapProductionCompany } from '@server/models/Movie';
+import { mapArtistResult } from '@server/models/Music';
 import {
   mapCollectionResult,
   mapMovieResult,
@@ -808,6 +810,77 @@ discoverRoutes.get<{ language: string }, GenreSliderItem[]>(
     }
   }
 );
+
+discoverRoutes.get('/music', async (req, res, next) => {
+  const settings = getSettings();
+
+  try {
+    // Get the default Lidarr instance
+    const lidarrSettings = settings.lidarr.find(
+      (lidarr) => lidarr.isDefault
+    );
+
+    if (!lidarrSettings) {
+      return res.status(200).json({
+        page: 1,
+        totalPages: 1,
+        totalResults: 0,
+        results: [],
+      });
+    }
+
+    const lidarrApi = new LidarrAPI({
+      url: lidarrSettings.useSsl
+        ? `https://${lidarrSettings.hostname}:${lidarrSettings.port}${lidarrSettings.baseUrl}`
+        : `http://${lidarrSettings.hostname}:${lidarrSettings.port}${lidarrSettings.baseUrl}`,
+      apiKey: lidarrSettings.apiKey,
+    });
+
+    // Get all artists from Lidarr (this will be popular artists already in the library)
+    const artists = await lidarrApi.getArtists();
+
+    // Sort by album count (popularity proxy) and take top results
+    const sortedArtists = [...artists].sort(
+      (a, b) =>
+        (b.statistics?.albumCount || 0) - (a.statistics?.albumCount || 0)
+    );
+
+    const page = Number(req.query.page) || 1;
+    const itemsPerPage = 20;
+    const startIndex = (page - 1) * itemsPerPage;
+    const endIndex = startIndex + itemsPerPage;
+    const paginatedArtists = sortedArtists.slice(startIndex, endIndex);
+
+    // Get media info for artists
+    const media = await Media.getRelatedMedia(
+      paginatedArtists.map((artist) => artist.id)
+    );
+
+    return res.status(200).json({
+      page,
+      totalPages: Math.ceil(sortedArtists.length / itemsPerPage),
+      totalResults: sortedArtists.length,
+      results: paginatedArtists.map((artist) =>
+        mapArtistResult(
+          artist,
+          media.find(
+            (m) =>
+              m.tmdbId === artist.id && m.mediaType === MediaType.MUSIC
+          )
+        )
+      ),
+    });
+  } catch (e) {
+    logger.debug('Something went wrong retrieving music', {
+      label: 'API',
+      errorMessage: e.message,
+    });
+    return next({
+      status: 500,
+      message: 'Unable to retrieve music.',
+    });
+  }
+});
 
 discoverRoutes.get<Record<string, unknown>, WatchlistResponse>(
   '/watchlist',
