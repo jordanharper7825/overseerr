@@ -5107,6 +5107,62 @@ paths:
                         - $ref: '#/components/schemas/MovieResult'
                         - $ref: '#/components/schemas/TvResult'
                         - $ref: '#/components/schemas/PersonResult'
+  /discover/music:
+    get:
+      summary: Discover music
+      description: Returns a list of artists from Lidarr in a JSON object.
+      tags:
+        - search
+      parameters:
+        - in: query
+          name: page
+          schema:
+            type: number
+            example: 1
+            default: 1
+      responses:
+        '200':
+          description: Results
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  page:
+                    type: number
+                    example: 1
+                  totalPages:
+                    type: number
+                    example: 20
+                  totalResults:
+                    type: number
+                    example: 200
+                  results:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        id:
+                          type: number
+                          example: 1
+                        mediaType:
+                          type: string
+                          example: artist
+                        name:
+                          type: string
+                          example: Artist Name
+                        foreignId:
+                          type: string
+                          example: mbid-123
+                        overview:
+                          type: string
+                          example: Artist biography
+                        posterPath:
+                          type: string
+                          example: https://example.com/poster.jpg
+                        albumCount:
+                          type: number
+                          example: 10
   /discover/keyword/{keywordId}/movies:
     get:
       summary: Get movies from keyword
@@ -5948,6 +6004,102 @@ paths:
                   criticsRating:
                     type: string
                     enum: ['Rotten', 'Fresh']
+  /music/{artistId}:
+    get:
+      summary: Get artist details
+      description: Returns artist details from Lidarr based on provided artistId.
+      tags:
+        - music
+      parameters:
+        - in: path
+          name: artistId
+          required: true
+          schema:
+            type: number
+            example: 1
+      responses:
+        '200':
+          description: Artist details returned
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  id:
+                    type: number
+                    example: 1
+                  mediaType:
+                    type: string
+                    example: artist
+                  name:
+                    type: string
+                    example: Artist Name
+                  foreignId:
+                    type: string
+                    example: mbid-123
+                  overview:
+                    type: string
+                    example: Artist biography
+                  posterPath:
+                    type: string
+                    example: https://example.com/poster.jpg
+                  albumCount:
+                    type: number
+                    example: 10
+        '404':
+          description: Artist not found
+  /music/{artistId}/albums:
+    get:
+      summary: Get albums by artist
+      description: Returns a list of albums for the specified artist from Lidarr.
+      tags:
+        - music
+      parameters:
+        - in: path
+          name: artistId
+          required: true
+          schema:
+            type: number
+            example: 1
+      responses:
+        '200':
+          description: List of albums
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    id:
+                      type: number
+                      example: 1
+                    mediaType:
+                      type: string
+                      example: album
+                    title:
+                      type: string
+                      example: Album Title
+                    foreignId:
+                      type: string
+                      example: album-mbid-123
+                    artistId:
+                      type: number
+                      example: 1
+                    artistName:
+                      type: string
+                      example: Artist Name
+                    overview:
+                      type: string
+                      example: Album description
+                    posterPath:
+                      type: string
+                      example: https://example.com/cover.jpg
+                    trackCount:
+                      type: number
+                      example: 12
+        '404':
+          description: Artist not found
   /person/{personId}:
     get:
       summary: Get person details
