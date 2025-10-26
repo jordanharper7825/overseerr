@@ -26,7 +26,7 @@ interface StatusBadgeProps {
   plexUrl?: string;
   serviceUrl?: string;
   tmdbId?: number;
-  mediaType?: 'movie' | 'tv';
+  mediaType?: 'movie' | 'tv' | 'music';
   title?: string | string[];
 }
 

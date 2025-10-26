@@ -1,17 +1,27 @@
-import LidarrAPI from '@server/api/servarr/lidarr';
 import type { LidarrArtist } from '@server/api/servarr/lidarr';
+import LidarrAPI from '@server/api/servarr/lidarr';
 import { MediaStatus, MediaType } from '@server/constants/media';
 import { getRepository } from '@server/datasource';
 import Media from '@server/entity/Media';
+import type {
+  RunnableScanner,
+  StatusBase,
+} from '@server/lib/scanners/baseScanner';
+import BaseScanner from '@server/lib/scanners/baseScanner';
 import type { LidarrSettings } from '@server/lib/settings';
 import { getSettings } from '@server/lib/settings';
 import logger from '@server/logger';
 import { uniqWith } from 'lodash';
-import BaseScanner from '../baseScanner';
 
-type SyncStatus = 'success' | 'error';
+type SyncStatus = StatusBase & {
+  currentServer: LidarrSettings | null;
+  servers: LidarrSettings[];
+};
 
-class LidarrScanner extends BaseScanner<LidarrArtist> {
+class LidarrScanner
+  extends BaseScanner<LidarrArtist>
+  implements RunnableScanner<SyncStatus>
+{
   private servers: LidarrSettings[];
   private currentServer: LidarrSettings | null = null;
   private lidarrApi: LidarrAPI;
@@ -20,9 +30,19 @@ class LidarrScanner extends BaseScanner<LidarrArtist> {
     super('Lidarr Scan', { bundleSize: 50 });
   }
 
+  public status(): SyncStatus {
+    return {
+      running: this.running,
+      progress: this.progress,
+      total: this.items.length,
+      currentServer: this.currentServer,
+      servers: this.servers,
+    };
+  }
+
   public async run(): Promise<void> {
     const settings = getSettings();
-    const sessionId = this.startSession();
+    const sessionId = this.startRun();
 
     try {
       this.servers = uniqWith(
@@ -72,13 +92,11 @@ class LidarrScanner extends BaseScanner<LidarrArtist> {
         errorMessage: e.message,
       });
     } finally {
-      this.endSession(sessionId);
+      this.endRun(sessionId);
     }
   }
 
-  private async processLidarrArtist(
-    lidarrArtist: LidarrArtist
-  ): Promise<SyncStatus> {
+  private async processLidarrArtist(lidarrArtist: LidarrArtist): Promise<void> {
     try {
       const mediaRepository = getRepository(Media);
       const server = this.currentServer as LidarrSettings;
@@ -97,7 +115,7 @@ class LidarrScanner extends BaseScanner<LidarrArtist> {
           artistName: lidarrArtist.artistName,
           mbid: lidarrArtist.foreignArtistId,
         });
-        return 'success';
+        return;
       }
 
       // Calculate status based on statistics
@@ -138,15 +156,12 @@ class LidarrScanner extends BaseScanner<LidarrArtist> {
         mediaId: media.id,
         status: newStatus,
       });
-
-      return 'success';
     } catch (e) {
       logger.error('Failed to process Lidarr artist', {
         label: 'Lidarr Scanner',
         errorMessage: e.message,
         artist: lidarrArtist.artistName,
       });
-      return 'error';
     }
   }
 }

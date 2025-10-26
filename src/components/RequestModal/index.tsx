@@ -7,7 +7,7 @@ import type { MediaRequest } from '@server/entity/MediaRequest';
 
 interface RequestModalProps {
   show: boolean;
-  type: 'movie' | 'tv' | 'collection';
+  type: 'movie' | 'tv' | 'collection' | 'music';
   tmdbId: number;
   is4k?: boolean;
   editRequest?: MediaRequest;
@@ -26,6 +26,12 @@ const RequestModal = ({
   onUpdating,
   onCancel,
 }: RequestModalProps) => {
+  // Music requests are not supported in this modal yet
+  // They would need a MusicBrainz-based modal instead of TMDB
+  if (type === 'music') {
+    return null;
+  }
+
   return (
     <Transition
       as="div"

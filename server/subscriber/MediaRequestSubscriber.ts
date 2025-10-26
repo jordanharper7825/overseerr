@@ -1,3 +1,5 @@
+import type { AddArtistOptions } from '@server/api/servarr/lidarr';
+import LidarrAPI from '@server/api/servarr/lidarr';
 import type { RadarrMovieOptions } from '@server/api/servarr/radarr';
 import RadarrAPI from '@server/api/servarr/radarr';
 import type {
@@ -5,8 +7,6 @@ import type {
   SonarrSeries,
 } from '@server/api/servarr/sonarr';
 import SonarrAPI from '@server/api/servarr/sonarr';
-import type { AddArtistOptions } from '@server/api/servarr/lidarr';
-import LidarrAPI from '@server/api/servarr/lidarr';
 import TheMovieDb from '@server/api/themoviedb';
 import { ANIME_KEYWORD_ID } from '@server/api/themoviedb/constants';
 import {
@@ -708,9 +708,7 @@ export class MediaRequestSubscriber
           return;
         }
 
-        let lidarrSettings = settings.lidarr.find(
-          (lidarr) => lidarr.isDefault
-        );
+        let lidarrSettings = settings.lidarr.find((lidarr) => lidarr.isDefault);
 
         if (
           entity.serverId !== null &&
@@ -744,7 +742,7 @@ export class MediaRequestSubscriber
 
         let rootFolder = lidarrSettings.activeDirectory;
         let qualityProfile = lidarrSettings.activeProfileId;
-        let metadataProfile = lidarrSettings.activeMetadataProfileId;
+        const metadataProfile = lidarrSettings.activeMetadataProfileId;
         let tags = lidarrSettings.tags ? [...lidarrSettings.tags] : [];
 
         if (
@@ -886,11 +884,7 @@ export class MediaRequestSubscriber
           foreignArtistId: media.musicbrainzId,
           monitored: true,
           tags,
-          searchNow: !lidarrSettings.preventSearch,
-          addOptions: {
-            monitor: 'all',
-            searchForMissingAlbums: !lidarrSettings.preventSearch,
-          },
+          searchForMissingAlbums: !lidarrSettings.preventSearch,
         };
 
         // Run entity asynchronously so we don't wait for it on the UI side

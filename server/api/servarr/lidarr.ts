@@ -16,11 +16,11 @@ export interface LidarrArtist {
   artistType: string;
   disambiguation: string;
   overview: string;
-  images: Array<{
+  images: {
     url: string;
     coverType: string;
     extension: string;
-  }>;
+  }[];
   path: string;
   rootFolderPath: string;
   tags: number[];
@@ -47,12 +47,12 @@ export interface LidarrAlbum {
   profileId: number;
   duration: number;
   albumType: string;
-  images: Array<{
+  images: {
     url: string;
     coverType: string;
     extension: string;
-  }>;
-  releases: Array<{
+  }[];
+  releases: {
     id: number;
     albumId: number;
     foreignReleaseId: string;
@@ -60,13 +60,13 @@ export interface LidarrAlbum {
     status: string;
     duration: number;
     trackCount: number;
-    media: Array<{
+    media: {
       mediumNumber: number;
       mediumName: string;
       mediumFormat: string;
-    }>;
+    }[];
     monitored: boolean;
-  }>;
+  }[];
   artist: LidarrArtist;
 }
 
@@ -119,14 +119,11 @@ class LidarrAPI extends ServarrBase<{ artistId?: number; albumId?: number }> {
     mbid: string
   ): Promise<LidarrArtist | null> {
     try {
-      const response = await this.axios.get<LidarrArtist[]>(
-        '/artist/lookup',
-        {
-          params: {
-            term: `mbid:${mbid}`,
-          },
-        }
-      );
+      const response = await this.axios.get<LidarrArtist[]>('/artist/lookup', {
+        params: {
+          term: `mbid:${mbid}`,
+        },
+      });
 
       if (!response.data[0]) {
         return null;
@@ -170,12 +167,9 @@ class LidarrAPI extends ServarrBase<{ artistId?: number; albumId?: number }> {
 
   public searchArtist = async (term: string): Promise<LidarrArtist[]> => {
     try {
-      const response = await this.axios.get<LidarrArtist[]>(
-        '/artist/lookup',
-        {
-          params: { term },
-        }
-      );
+      const response = await this.axios.get<LidarrArtist[]>('/artist/lookup', {
+        params: { term },
+      });
       return response.data;
     } catch (e) {
       throw new Error(`[Lidarr] Failed to search artists: ${e.message}`);
@@ -277,9 +271,7 @@ class LidarrAPI extends ServarrBase<{ artistId?: number; albumId?: number }> {
 
   public addAlbum = async (options: AddAlbumOptions): Promise<LidarrAlbum> => {
     try {
-      const album = await this.getAlbumByReleaseGroupId(
-        options.foreignAlbumId
-      );
+      const album = await this.getAlbumByReleaseGroupId(options.foreignAlbumId);
 
       if (!album) {
         throw new Error('Album not found in Lidarr lookup');
@@ -338,11 +330,11 @@ class LidarrAPI extends ServarrBase<{ artistId?: number; albumId?: number }> {
     }
   }
 
-  public async searchAlbum(albumId: number): Promise<void> {
+  public async triggerAlbumSearch(albumId: number): Promise<void> {
     try {
       await this.runCommand('AlbumSearch', { albumId });
     } catch (e) {
-      logger.error('Failed to search for album', {
+      logger.error('Failed to trigger album search', {
         label: 'Lidarr',
         errorMessage: e.message,
         albumId,
