@@ -1,3 +1,4 @@
+import LidarrAPI from '@server/api/servarr/lidarr';
 import RadarrAPI from '@server/api/servarr/radarr';
 import SonarrAPI from '@server/api/servarr/sonarr';
 import { MediaStatus, MediaType } from '@server/constants/media';
@@ -83,6 +84,14 @@ class Media {
   @Column({ nullable: true })
   @Index()
   public imdbId?: string;
+
+  @Column({ nullable: true, type: 'varchar' })
+  @Index()
+  public musicbrainzId?: string;
+
+  @Column({ nullable: true, type: 'varchar' })
+  @Index()
+  public musicbrainzReleaseGroupId?: string;
 
   @Column({ type: 'int', default: MediaStatus.UNKNOWN })
   public status: MediaStatus;
@@ -252,6 +261,21 @@ class Media {
                 server,
                 `/series/${this.externalServiceSlug4k}`
               );
+        }
+      }
+    }
+
+    if (this.mediaType === MediaType.MUSIC) {
+      if (this.serviceId !== null && this.externalServiceSlug !== null) {
+        const settings = getSettings();
+        const server = settings.lidarr.find(
+          (lidarr) => lidarr.id === this.serviceId
+        );
+
+        if (server) {
+          this.serviceUrl = server.externalUrl
+            ? `${server.externalUrl}/artist/${this.externalServiceSlug}`
+            : LidarrAPI.buildUrl(server, `/artist/${this.externalServiceSlug}`);
         }
       }
     }

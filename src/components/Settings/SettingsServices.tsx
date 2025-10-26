@@ -1,5 +1,6 @@
 import RadarrLogo from '@app/assets/services/radarr.svg';
 import SonarrLogo from '@app/assets/services/sonarr.svg';
+import LidarrLogo from '@app/assets/services/lidarr.svg';
 import Alert from '@app/components/Common/Alert';
 import Badge from '@app/components/Common/Badge';
 import Button from '@app/components/Common/Button';
@@ -8,10 +9,15 @@ import Modal from '@app/components/Common/Modal';
 import PageTitle from '@app/components/Common/PageTitle';
 import RadarrModal from '@app/components/Settings/RadarrModal';
 import SonarrModal from '@app/components/Settings/SonarrModal';
+import LidarrModal from '@app/components/Settings/LidarrModal';
 import globalMessages from '@app/i18n/globalMessages';
 import { Transition } from '@headlessui/react';
 import { PencilIcon, PlusIcon, TrashIcon } from '@heroicons/react/24/solid';
-import type { RadarrSettings, SonarrSettings } from '@server/lib/settings';
+import type {
+  RadarrSettings,
+  SonarrSettings,
+  LidarrSettings,
+} from '@server/lib/settings';
 import axios from 'axios';
 import { Fragment, useState } from 'react';
 import { defineMessages, useIntl } from 'react-intl';
@@ -21,8 +27,11 @@ const messages = defineMessages({
   services: 'Services',
   radarrsettings: 'Radarr Settings',
   sonarrsettings: 'Sonarr Settings',
+  lidarrsettings: 'Lidarr Settings',
   serviceSettingsDescription:
     'Configure your {serverType} server(s) below. You can connect multiple {serverType} servers, but only two of them can be marked as defaults (one non-4K and one 4K). Administrators are able to override the server used to process new requests prior to approval.',
+  lidarrServiceSettingsDescription:
+    'Configure your {serverType} server(s) below. You can connect multiple {serverType} servers, but only one can be marked as default. Administrators are able to override the server used to process new requests prior to approval.',
   deleteserverconfirm: 'Are you sure you want to delete this server?',
   ssl: 'SSL',
   default: 'Default',
@@ -32,6 +41,7 @@ const messages = defineMessages({
   activeProfile: 'Active Profile',
   addradarr: 'Add Radarr Server',
   addsonarr: 'Add Sonarr Server',
+  addlidarr: 'Add Lidarr Server',
   noDefaultServer:
     'At least one {serverType} server must be marked as default in order for {mediaType} requests to be processed.',
   noDefaultNon4kServer:
@@ -40,6 +50,7 @@ const messages = defineMessages({
     'A 4K {serverType} server must be marked as default in order to enable users to submit 4K {mediaType} requests.',
   mediaTypeMovie: 'movie',
   mediaTypeSeries: 'series',
+  mediaTypeMusic: 'music',
   deleteServer: 'Delete {serverType} Server',
 });
 
@@ -53,6 +64,7 @@ interface ServerInstanceProps {
   externalUrl?: string;
   profileName: string;
   isSonarr?: boolean;
+  isLidarr?: boolean;
   onEdit: () => void;
   onDelete: () => void;
 }
@@ -66,6 +78,7 @@ const ServerInstance = ({
   isDefault = false,
   isSSL = false,
   isSonarr = false,
+  isLidarr = false,
   externalUrl,
   onEdit,
   onDelete,
@@ -134,7 +147,9 @@ const ServerInstance = ({
           rel="noopener noreferrer"
           className="opacity-50 hover:opacity-100"
         >
-          {isSonarr ? (
+          {isLidarr ? (
+            <LidarrLogo className="h-10 w-10 flex-shrink-0" />
+          ) : isSonarr ? (
             <SonarrLogo className="h-10 w-10 flex-shrink-0" />
           ) : (
             <RadarrLogo className="h-10 w-10 flex-shrink-0" />
@@ -179,6 +194,11 @@ const SettingsServices = () => {
     error: sonarrError,
     mutate: revalidateSonarr,
   } = useSWR<SonarrSettings[]>('/api/v1/settings/sonarr');
+  const {
+    data: lidarrData,
+    error: lidarrError,
+    mutate: revalidateLidarr,
+  } = useSWR<LidarrSettings[]>('/api/v1/settings/lidarr');
   const [editRadarrModal, setEditRadarrModal] = useState<{
     open: boolean;
     radarr: RadarrSettings | null;
@@ -193,9 +213,16 @@ const SettingsServices = () => {
     open: false,
     sonarr: null,
   });
+  const [editLidarrModal, setEditLidarrModal] = useState<{
+    open: boolean;
+    lidarr: LidarrSettings | null;
+  }>({
+    open: false,
+    lidarr: null,
+  });
   const [deleteServerModal, setDeleteServerModal] = useState<{
     open: boolean;
-    type: 'radarr' | 'sonarr';
+    type: 'radarr' | 'sonarr' | 'lidarr';
     serverId: number | null;
   }>({
     open: false,
@@ -210,6 +237,7 @@ const SettingsServices = () => {
     setDeleteServerModal({ open: false, serverId: null, type: 'radarr' });
     revalidateRadarr();
     revalidateSonarr();
+    revalidateLidarr();
     mutate('/api/v1/settings/public');
   };
 
@@ -253,6 +281,17 @@ const SettingsServices = () => {
           }}
         />
       )}
+      {editLidarrModal.open && (
+        <LidarrModal
+          lidarr={editLidarrModal.lidarr}
+          onClose={() => setEditLidarrModal({ open: false, lidarr: null })}
+          onSave={() => {
+            revalidateLidarr();
+            mutate('/api/v1/settings/public');
+            setEditLidarrModal({ open: false, lidarr: null });
+          }}
+        />
+      )}
       <Transition
         as={Fragment}
         show={deleteServerModal.open}
@@ -276,7 +315,11 @@ const SettingsServices = () => {
           }
           title={intl.formatMessage(messages.deleteServer, {
             serverType:
-              deleteServerModal.type === 'radarr' ? 'Radarr' : 'Sonarr',
+              deleteServerModal.type === 'radarr'
+                ? 'Radarr'
+                : deleteServerModal.type === 'sonarr'
+                ? 'Sonarr'
+                : 'Lidarr',
           })}
         >
           {intl.formatMessage(messages.deleteserverconfirm)}
@@ -441,6 +484,68 @@ const SettingsServices = () => {
                   >
                     <PlusIcon />
                     <span>{intl.formatMessage(messages.addsonarr)}</span>
+                  </Button>
+                </div>
+              </li>
+            </ul>
+          </>
+        )}
+      </div>
+      <div className="mt-10 mb-6">
+        <h3 className="heading">
+          {intl.formatMessage(messages.lidarrsettings)}
+        </h3>
+        <p className="description">
+          {intl.formatMessage(messages.lidarrServiceSettingsDescription, {
+            serverType: 'Lidarr',
+          })}
+        </p>
+      </div>
+      <div className="section">
+        {!lidarrData && !lidarrError && <LoadingSpinner />}
+        {lidarrData && !lidarrError && (
+          <>
+            {lidarrData.length > 0 &&
+              !lidarrData.some((lidarr) => lidarr.isDefault) && (
+                <Alert
+                  title={intl.formatMessage(messages.noDefaultServer, {
+                    serverType: 'Lidarr',
+                    mediaType: intl.formatMessage(messages.mediaTypeMusic),
+                  })}
+                />
+              )}
+            <ul className="grid max-w-6xl grid-cols-1 gap-6 lg:grid-cols-2 xl:grid-cols-3">
+              {lidarrData.map((lidarr) => (
+                <ServerInstance
+                  key={`lidarr-config-${lidarr.id}`}
+                  name={lidarr.name}
+                  hostname={lidarr.hostname}
+                  port={lidarr.port}
+                  profileName={lidarr.activeProfileName}
+                  isSSL={lidarr.useSsl}
+                  isLidarr
+                  isDefault={lidarr.isDefault}
+                  externalUrl={lidarr.externalUrl}
+                  onEdit={() => setEditLidarrModal({ open: true, lidarr })}
+                  onDelete={() =>
+                    setDeleteServerModal({
+                      open: true,
+                      serverId: lidarr.id,
+                      type: 'lidarr',
+                    })
+                  }
+                />
+              ))}
+              <li className="col-span-1 h-32 rounded-lg border-2 border-dashed border-gray-400 shadow sm:h-44">
+                <div className="flex h-full w-full items-center justify-center">
+                  <Button
+                    buttonType="ghost"
+                    onClick={() =>
+                      setEditLidarrModal({ open: true, lidarr: null })
+                    }
+                  >
+                    <PlusIcon />
+                    <span>{intl.formatMessage(messages.addlidarr)}</span>
                   </Button>
                 </div>
               </li>

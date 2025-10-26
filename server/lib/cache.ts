@@ -4,6 +4,7 @@ export type AvailableCacheIds =
   | 'tmdb'
   | 'radarr'
   | 'sonarr'
+  | 'lidarr'
   | 'rt'
   | 'imdb'
   | 'github'
@@ -49,6 +50,7 @@ class CacheManager {
     }),
     radarr: new Cache('radarr', 'Radarr API'),
     sonarr: new Cache('sonarr', 'Sonarr API'),
+    lidarr: new Cache('lidarr', 'Lidarr API'),
     rt: new Cache('rt', 'Rotten Tomatoes API', {
       stdTtl: 43200,
       checkPeriod: 60 * 30,
