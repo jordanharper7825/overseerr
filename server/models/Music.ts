@@ -42,9 +42,13 @@ export const mapArtistResult = (
   artistResult: LidarrArtist,
   media?: Media
 ): ArtistResult => {
-  const posterImage = artistResult.images?.find(
-    (img) => img.coverType === 'poster'
-  );
+  // Lidarr uses different coverTypes: 'poster', 'fanart', 'banner', 'logo', 'disc', 'unknown'
+  // Try poster first, then fanart, then banner, or just use the first available image
+  const posterImage =
+    artistResult.images?.find((img) => img.coverType === 'poster') ||
+    artistResult.images?.find((img) => img.coverType === 'fanart') ||
+    artistResult.images?.find((img) => img.coverType === 'banner') ||
+    artistResult.images?.[0];
 
   return {
     id: artistResult.id,

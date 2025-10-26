@@ -199,6 +199,8 @@ const TitleCard = ({
                     ? `/movie/${id}`
                     : mediaType === 'collection'
                     ? `/collection/${id}`
+                    : mediaType === 'artist'
+                    ? `/music/${id}`
                     : `/tv/${id}`
                 }
               >

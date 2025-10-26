@@ -861,11 +861,13 @@ discoverRoutes.get('/music', async (req, res, next) => {
         totalCount: artists.length,
       });
 
-      // Log first artist in full detail to debug empty data issue
+      // Log first artist's image data to debug missing images
       if (artists[0]) {
-        logger.info('First artist raw data:', {
+        logger.info('First artist image data:', {
           label: 'API',
-          rawArtist: JSON.stringify(artists[0]),
+          artistName: artists[0].artistName,
+          imageTypes: artists[0].images?.map((img) => img.coverType),
+          hasImages: !!artists[0].images && artists[0].images.length > 0,
         });
       }
     } catch (apiError) {
