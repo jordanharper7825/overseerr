@@ -131,7 +131,9 @@ const TitleCard = ({
             alt=""
             src={
               image
-                ? `https://image.tmdb.org/t/p/w300_and_h450_face${image}`
+                ? image.startsWith('http://') || image.startsWith('https://')
+                  ? image
+                  : `https://image.tmdb.org/t/p/w300_and_h450_face${image}`
                 : `/images/overseerr_poster_not_found_logo_top.png`
             }
             layout="fill"
