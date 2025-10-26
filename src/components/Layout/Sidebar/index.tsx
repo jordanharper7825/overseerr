@@ -8,6 +8,7 @@ import {
   CogIcon,
   ExclamationTriangleIcon,
   FilmIcon,
+  MusicalNoteIcon,
   SparklesIcon,
   TvIcon,
   UsersIcon,
@@ -22,6 +23,7 @@ export const menuMessages = defineMessages({
   dashboard: 'Discover',
   browsemovies: 'Movies',
   browsetv: 'Series',
+  browsemusic: 'Music',
   requests: 'Requests',
   issues: 'Issues',
   users: 'Users',
@@ -66,6 +68,12 @@ const SidebarLinks: SidebarLinkProps[] = [
     messagesKey: 'browsetv',
     svgIcon: <TvIcon className="mr-3 h-6 w-6" />,
     activeRegExp: /^\/discover\/tv$/,
+  },
+  {
+    href: '/discover/music',
+    messagesKey: 'browsemusic',
+    svgIcon: <MusicalNoteIcon className="mr-3 h-6 w-6" />,
+    activeRegExp: /^\/discover\/music$/,
   },
   {
     href: '/requests',
