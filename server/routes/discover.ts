@@ -812,9 +812,19 @@ discoverRoutes.get<{ language: string }, GenreSliderItem[]>(
 );
 
 discoverRoutes.get('/music', async (req, res, next) => {
-  const settings = getSettings();
-
   try {
+    const settings = getSettings();
+
+    // Check if lidarr settings exist
+    if (!settings.lidarr || settings.lidarr.length === 0) {
+      return res.status(200).json({
+        page: 1,
+        totalPages: 1,
+        totalResults: 0,
+        results: [],
+      });
+    }
+
     // Get the default Lidarr instance
     const lidarrSettings = settings.lidarr.find(
       (lidarr) => lidarr.isDefault
@@ -829,10 +839,11 @@ discoverRoutes.get('/music', async (req, res, next) => {
       });
     }
 
+    const baseUrl = lidarrSettings.baseUrl || '';
     const lidarrApi = new LidarrAPI({
       url: lidarrSettings.useSsl
-        ? `https://${lidarrSettings.hostname}:${lidarrSettings.port}${lidarrSettings.baseUrl}`
-        : `http://${lidarrSettings.hostname}:${lidarrSettings.port}${lidarrSettings.baseUrl}`,
+        ? `https://${lidarrSettings.hostname}:${lidarrSettings.port}${baseUrl}`
+        : `http://${lidarrSettings.hostname}:${lidarrSettings.port}${baseUrl}`,
       apiKey: lidarrSettings.apiKey,
     });
 
