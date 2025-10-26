@@ -851,6 +851,15 @@ discoverRoutes.get('/music', async (req, res, next) => {
     let artists = [];
     try {
       artists = await lidarrApi.getArtists();
+      logger.info(`Fetched ${artists.length} artists from Lidarr`, {
+        label: 'API',
+        sampleArtist: artists[0] ? {
+          id: artists[0].id,
+          artistName: artists[0].artistName,
+          hasImages: !!artists[0].images,
+          hasStatistics: !!artists[0].statistics,
+        } : 'no artists',
+      });
     } catch (apiError) {
       logger.warn('Failed to fetch artists from Lidarr', {
         label: 'API',
