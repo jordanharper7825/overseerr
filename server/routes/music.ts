@@ -23,8 +23,9 @@ musicRoutes.get('/:artistId', async (req, res, next) => {
       });
     }
 
+    const apiUrl = LidarrAPI.buildUrl(lidarrSettings, '/api/v1');
     const lidarrApi = new LidarrAPI({
-      url: LidarrAPI.buildUrl(lidarrSettings, '/api/v1'),
+      url: apiUrl,
       apiKey: lidarrSettings.apiKey,
     });
 
@@ -46,7 +47,8 @@ musicRoutes.get('/:artistId', async (req, res, next) => {
         artist,
         media.find(
           (m) => m.tmdbId === artist.id && m.mediaType === MediaType.MUSIC
-        )
+        ),
+        apiUrl
       )
     );
   } catch (e) {

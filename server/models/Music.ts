@@ -40,7 +40,8 @@ export type MusicResults = ArtistResult | AlbumResult;
 
 export const mapArtistResult = (
   artistResult: LidarrArtist,
-  media?: Media
+  media?: Media,
+  serverUrl?: string
 ): ArtistResult => {
   // Lidarr uses different coverTypes: 'poster', 'fanart', 'banner', 'logo', 'disc', 'unknown'
   // Try poster first, then fanart, then banner, or just use the first available image
@@ -49,6 +50,14 @@ export const mapArtistResult = (
     artistResult.images?.find((img) => img.coverType === 'fanart') ||
     artistResult.images?.find((img) => img.coverType === 'banner') ||
     artistResult.images?.[0];
+
+  // Convert relative image URLs to full URLs
+  let posterPath = posterImage?.url;
+  if (posterPath && serverUrl && posterPath.startsWith('/')) {
+    // Remove '/api/v1' from serverUrl if present, then append the image path
+    const baseUrl = serverUrl.replace('/api/v1', '');
+    posterPath = `${baseUrl}${posterPath}`;
+  }
 
   return {
     id: artistResult.id,
@@ -59,7 +68,7 @@ export const mapArtistResult = (
     disambiguation: artistResult.disambiguation,
     artistType: artistResult.artistType,
     albumCount: artistResult.statistics?.albumCount,
-    posterPath: posterImage?.url,
+    posterPath,
     mediaInfo: media,
   };
 };

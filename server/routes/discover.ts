@@ -907,7 +907,8 @@ discoverRoutes.get('/music', async (req, res, next) => {
         media.find(
           (m) =>
             m.tmdbId === artist.id && m.mediaType === MediaType.MUSIC
-        )
+        ),
+        apiUrl
       )
     );
 
