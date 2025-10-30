@@ -6014,6 +6014,67 @@ paths:
                   criticsRating:
                     type: string
                     enum: ['Rotten', 'Fresh']
+  /music/album/{albumId}:
+    get:
+      summary: Get album details
+      description: Returns album details from Lidarr based on provided albumId.
+      tags:
+        - music
+      parameters:
+        - in: path
+          name: albumId
+          required: true
+          schema:
+            type: number
+            example: 1
+      responses:
+        '200':
+          description: Album details returned
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  id:
+                    type: number
+                    example: 1
+                  mediaType:
+                    type: string
+                    example: album
+                  title:
+                    type: string
+                    example: Album Title
+                  foreignId:
+                    type: string
+                    example: album-mbid-123
+                  artistId:
+                    type: number
+                    example: 1
+                  artistName:
+                    type: string
+                    example: Artist Name
+                  overview:
+                    type: string
+                    example: Album description
+                  posterPath:
+                    type: string
+                    example: https://example.com/cover.jpg
+                  trackCount:
+                    type: number
+                    example: 12
+                  albumType:
+                    type: string
+                    example: Album
+                  duration:
+                    type: number
+                    example: 2400
+                  disambiguation:
+                    type: string
+                    example: '2020 remaster'
+        '404':
+          description: Album not found
+        '500':
+          description: Unable to retrieve album
   /music/{artistId}:
     get:
       summary: Get artist details
