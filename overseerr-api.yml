@@ -5120,6 +5120,16 @@ paths:
             type: number
             example: 1
             default: 1
+        - in: query
+          name: sortBy
+          schema:
+            type: string
+            enum:
+              - name
+              - albumCount
+              - dateAdded
+            example: albumCount
+            default: albumCount
       responses:
         '200':
           description: Results
