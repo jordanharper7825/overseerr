@@ -70,22 +70,25 @@ const TitleCard = ({
 
   const closeModal = useCallback(() => setShowRequestModal(false), []);
 
-  const showRequestButton = mediaType !== 'artist' && hasPermission(
-    [
-      Permission.REQUEST,
-      mediaType === 'movie' || mediaType === 'collection'
-        ? Permission.REQUEST_MOVIE
-        : Permission.REQUEST_TV,
-    ],
-    { type: 'or' }
-  );
+  const showRequestButton =
+    mediaType !== 'artist' &&
+    mediaType !== 'album' &&
+    hasPermission(
+      [
+        Permission.REQUEST,
+        mediaType === 'movie' || mediaType === 'collection'
+          ? Permission.REQUEST_MOVIE
+          : Permission.REQUEST_TV,
+      ],
+      { type: 'or' }
+    );
 
   return (
     <div
       className={canExpand ? 'w-full' : 'w-36 sm:w-36 md:w-44'}
       data-testid="title-card"
     >
-      {mediaType !== 'artist' && (
+      {mediaType !== 'artist' && mediaType !== 'album' && (
         <RequestModal
           tmdbId={id}
           show={showRequestModal}
@@ -146,6 +149,8 @@ const TitleCard = ({
                   ? 'border-blue-500 bg-blue-600'
                   : mediaType === 'artist'
                   ? 'border-green-500 bg-green-600'
+                  : mediaType === 'album'
+                  ? 'border-yellow-500 bg-yellow-600'
                   : 'border-purple-600 bg-purple-600'
               }`}
             >
@@ -156,6 +161,8 @@ const TitleCard = ({
                   ? intl.formatMessage(globalMessages.collection)
                   : mediaType === 'artist'
                   ? 'Artist'
+                  : mediaType === 'album'
+                  ? 'Album'
                   : intl.formatMessage(globalMessages.tvshow)}
               </div>
             </div>
@@ -203,6 +210,8 @@ const TitleCard = ({
                     ? `/collection/${id}`
                     : mediaType === 'artist'
                     ? `/music/${id}`
+                    : mediaType === 'album'
+                    ? `/album/${id}`
                     : `/tv/${id}`
                 }
               >

@@ -10,7 +10,13 @@ import type {
 import { MediaType as MainMediaType } from '@server/constants/media';
 import type Media from '@server/entity/Media';
 
-export type MediaType = 'tv' | 'movie' | 'person' | 'collection' | 'artist';
+export type MediaType =
+  | 'tv'
+  | 'movie'
+  | 'person'
+  | 'collection'
+  | 'artist'
+  | 'album';
 
 interface SearchResult {
   id: number;

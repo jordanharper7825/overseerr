@@ -811,7 +811,7 @@ discoverRoutes.get<{ language: string }, GenreSliderItem[]>(
   }
 );
 
-discoverRoutes.get('/music', async (req, res, next) => {
+discoverRoutes.get('/music', async (req, res) => {
   try {
     const settings = getSettings();
 
@@ -826,9 +826,7 @@ discoverRoutes.get('/music', async (req, res, next) => {
     }
 
     // Get the default Lidarr instance
-    const lidarrSettings = settings.lidarr.find(
-      (lidarr) => lidarr.isDefault
-    );
+    const lidarrSettings = settings.lidarr.find((lidarr) => lidarr.isDefault);
 
     if (!lidarrSettings) {
       return res.status(200).json({
@@ -886,7 +884,7 @@ discoverRoutes.get('/music', async (req, res, next) => {
 
     // Sort artists based on query parameter
     const sortBy = (req.query.sortBy as string) || 'albumCount';
-    let sortedArtists = [...artists];
+    const sortedArtists = [...artists];
 
     switch (sortBy) {
       case 'name':
@@ -930,8 +928,7 @@ discoverRoutes.get('/music', async (req, res, next) => {
       mapArtistResult(
         artist,
         media.find(
-          (m) =>
-            m.tmdbId === artist.id && m.mediaType === MediaType.MUSIC
+          (m) => m.tmdbId === artist.id && m.mediaType === MediaType.MUSIC
         ),
         apiUrl
       )
@@ -958,6 +955,254 @@ discoverRoutes.get('/music', async (req, res, next) => {
       stack: e instanceof Error ? e.stack : undefined,
     });
     // Return empty results instead of 500 error
+    return res.status(200).json({
+      page: 1,
+      totalPages: 1,
+      totalResults: 0,
+      results: [],
+    });
+  }
+});
+
+// Music discover endpoints for different sections
+discoverRoutes.get('/music/popular-artists', async (req, res) => {
+  try {
+    const settings = getSettings();
+    const lidarrSettings = settings.lidarr?.find((lidarr) => lidarr.isDefault);
+
+    if (!lidarrSettings) {
+      return res.status(200).json({
+        page: 1,
+        totalPages: 1,
+        totalResults: 0,
+        results: [],
+      });
+    }
+
+    const apiUrl = LidarrAPI.buildUrl(lidarrSettings, '/api/v1');
+    const lidarrApi = new LidarrAPI({
+      url: apiUrl,
+      apiKey: lidarrSettings.apiKey,
+    });
+
+    const artists = await lidarrApi.getArtists();
+
+    // Sort by album count (most popular)
+    const sortedArtists = artists.sort(
+      (a, b) =>
+        (b.statistics?.albumCount || 0) - (a.statistics?.albumCount || 0)
+    );
+
+    const page = Number(req.query.page) || 1;
+    const itemsPerPage = 20;
+    const startIndex = (page - 1) * itemsPerPage;
+    const paginatedArtists = sortedArtists.slice(
+      startIndex,
+      startIndex + itemsPerPage
+    );
+
+    const media = await Media.getRelatedMedia(
+      paginatedArtists.map((artist) => artist.id)
+    );
+
+    const mappedResults = paginatedArtists.map((artist) =>
+      mapArtistResult(
+        artist,
+        media.find(
+          (m) => m.tmdbId === artist.id && m.mediaType === MediaType.MUSIC
+        ),
+        apiUrl
+      )
+    );
+
+    return res.status(200).json({
+      page,
+      totalPages: Math.ceil(sortedArtists.length / itemsPerPage),
+      totalResults: sortedArtists.length,
+      results: mappedResults,
+    });
+  } catch (e) {
+    logger.error('Error retrieving popular artists', {
+      label: 'API',
+      errorMessage: e instanceof Error ? e.message : String(e),
+    });
+    return res.status(200).json({
+      page: 1,
+      totalPages: 1,
+      totalResults: 0,
+      results: [],
+    });
+  }
+});
+
+discoverRoutes.get('/music/recent-albums', async (req, res) => {
+  try {
+    const settings = getSettings();
+    const lidarrSettings = settings.lidarr?.find((lidarr) => lidarr.isDefault);
+
+    if (!lidarrSettings) {
+      return res.status(200).json({
+        page: 1,
+        totalPages: 1,
+        totalResults: 0,
+        results: [],
+      });
+    }
+
+    const apiUrl = LidarrAPI.buildUrl(lidarrSettings, '/api/v1');
+    const lidarrApi = new LidarrAPI({
+      url: apiUrl,
+      apiKey: lidarrSettings.apiKey,
+    });
+
+    const artists = await lidarrApi.getArtists();
+    const allAlbums = [];
+
+    // Get albums from all artists and sort by added date
+    for (const artist of artists) {
+      try {
+        const albums = await lidarrApi.getAlbumsByArtist(artist.id);
+        allAlbums.push(...albums.map((album) => ({ ...album, artist })));
+      } catch (e) {
+        logger.warn(`Failed to fetch albums for artist ${artist.id}`, {
+          label: 'API',
+          error: e.message,
+        });
+      }
+    }
+
+    // Sort by monitored status and album ID (proxy for recently added)
+    const sortedAlbums = allAlbums.sort((a, b) => {
+      // Monitored albums first, then by descending ID (newer albums have higher IDs)
+      if (a.monitored !== b.monitored) {
+        return a.monitored ? -1 : 1;
+      }
+      return b.id - a.id;
+    });
+
+    const page = Number(req.query.page) || 1;
+    const itemsPerPage = 20;
+    const startIndex = (page - 1) * itemsPerPage;
+    const paginatedAlbums = sortedAlbums.slice(
+      startIndex,
+      startIndex + itemsPerPage
+    );
+
+    const { mapAlbumResult } = await import('@server/models/Music');
+    const media = await Media.getRelatedMedia(
+      paginatedAlbums.map((album) => album.id)
+    );
+
+    const mappedResults = paginatedAlbums.map((album) =>
+      mapAlbumResult(
+        album,
+        media.find(
+          (m) => m.tmdbId === album.id && m.mediaType === MediaType.MUSIC
+        ),
+        apiUrl
+      )
+    );
+
+    return res.status(200).json({
+      page,
+      totalPages: Math.ceil(sortedAlbums.length / itemsPerPage),
+      totalResults: sortedAlbums.length,
+      results: mappedResults,
+    });
+  } catch (e) {
+    logger.error('Error retrieving recent albums', {
+      label: 'API',
+      errorMessage: e instanceof Error ? e.message : String(e),
+    });
+    return res.status(200).json({
+      page: 1,
+      totalPages: 1,
+      totalResults: 0,
+      results: [],
+    });
+  }
+});
+
+discoverRoutes.get('/music/top-albums', async (req, res) => {
+  try {
+    const settings = getSettings();
+    const lidarrSettings = settings.lidarr?.find((lidarr) => lidarr.isDefault);
+
+    if (!lidarrSettings) {
+      return res.status(200).json({
+        page: 1,
+        totalPages: 1,
+        totalResults: 0,
+        results: [],
+      });
+    }
+
+    const apiUrl = LidarrAPI.buildUrl(lidarrSettings, '/api/v1');
+    const lidarrApi = new LidarrAPI({
+      url: apiUrl,
+      apiKey: lidarrSettings.apiKey,
+    });
+
+    const artists = await lidarrApi.getArtists();
+    const allAlbums = [];
+
+    // Get all albums from all artists
+    for (const artist of artists) {
+      try {
+        const albums = await lidarrApi.getAlbumsByArtist(artist.id);
+        allAlbums.push(...albums.map((album) => ({ ...album, artist })));
+      } catch (e) {
+        logger.warn(`Failed to fetch albums for artist ${artist.id}`, {
+          label: 'API',
+          error: e.message,
+        });
+      }
+    }
+
+    // Sort by ratings/popularity (using monitored status and track count as proxy)
+    const sortedAlbums = allAlbums.sort((a, b) => {
+      // Prefer monitored albums and those with more tracks
+      const aTrackCount = a.releases?.[0]?.trackCount || 0;
+      const bTrackCount = b.releases?.[0]?.trackCount || 0;
+      const scoreA = (a.monitored ? 1000 : 0) + aTrackCount;
+      const scoreB = (b.monitored ? 1000 : 0) + bTrackCount;
+      return scoreB - scoreA;
+    });
+
+    const page = Number(req.query.page) || 1;
+    const itemsPerPage = 50; // Top 50 albums
+    const startIndex = (page - 1) * itemsPerPage;
+    const paginatedAlbums = sortedAlbums.slice(
+      startIndex,
+      startIndex + itemsPerPage
+    );
+
+    const { mapAlbumResult } = await import('@server/models/Music');
+    const media = await Media.getRelatedMedia(
+      paginatedAlbums.map((album) => album.id)
+    );
+
+    const mappedResults = paginatedAlbums.map((album) =>
+      mapAlbumResult(
+        album,
+        media.find(
+          (m) => m.tmdbId === album.id && m.mediaType === MediaType.MUSIC
+        ),
+        apiUrl
+      )
+    );
+
+    return res.status(200).json({
+      page,
+      totalPages: Math.ceil(sortedAlbums.length / itemsPerPage),
+      totalResults: sortedAlbums.length,
+      results: mappedResults,
+    });
+  } catch (e) {
+    logger.error('Error retrieving top albums', {
+      label: 'API',
+      errorMessage: e instanceof Error ? e.message : String(e),
+    });
     return res.status(200).json({
       page: 1,
       totalPages: 1,
