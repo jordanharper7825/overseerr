@@ -80,11 +80,12 @@ export const mapAlbumResult = (
 ): AlbumResult => {
   const coverImage = albumResult.images?.find((img) => img.coverType === 'cover');
 
-  // Calculate total track count from releases
-  const totalTracks = albumResult.releases?.reduce(
-    (sum, release) => sum + (release.trackCount || 0),
-    0
-  );
+  // Get track count from monitored release or first release
+  // (albums can have multiple releases - vinyl, CD, remasters, etc.)
+  const monitoredRelease =
+    albumResult.releases?.find((r) => r.monitored) ||
+    albumResult.releases?.[0];
+  const trackCount = monitoredRelease?.trackCount || 0;
 
   // Convert relative image URLs to full URLs
   let posterPath = coverImage?.url;
@@ -104,7 +105,7 @@ export const mapAlbumResult = (
     disambiguation: albumResult.disambiguation,
     albumType: albumResult.albumType,
     duration: albumResult.duration,
-    trackCount: totalTracks,
+    trackCount,
     posterPath,
     mediaInfo: media,
   };

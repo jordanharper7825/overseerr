@@ -884,11 +884,33 @@ discoverRoutes.get('/music', async (req, res, next) => {
       });
     }
 
-    // Sort by album count (popularity proxy) and take top results
-    const sortedArtists = [...artists].sort(
-      (a, b) =>
-        (b.statistics?.albumCount || 0) - (a.statistics?.albumCount || 0)
-    );
+    // Sort artists based on query parameter
+    const sortBy = (req.query.sortBy as string) || 'albumCount';
+    let sortedArtists = [...artists];
+
+    switch (sortBy) {
+      case 'name':
+        // Sort alphabetically by artist name
+        sortedArtists.sort((a, b) =>
+          a.artistName.localeCompare(b.artistName)
+        );
+        break;
+      case 'dateAdded':
+        // Sort by date added (most recent first)
+        sortedArtists.sort(
+          (a, b) =>
+            new Date(b.added).getTime() - new Date(a.added).getTime()
+        );
+        break;
+      case 'albumCount':
+      default:
+        // Sort by album count (popularity proxy)
+        sortedArtists.sort(
+          (a, b) =>
+            (b.statistics?.albumCount || 0) - (a.statistics?.albumCount || 0)
+        );
+        break;
+    }
 
     const page = Number(req.query.page) || 1;
     const itemsPerPage = 20;
