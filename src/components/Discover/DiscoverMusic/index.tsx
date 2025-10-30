@@ -5,10 +5,12 @@ import { defineMessages, useIntl } from 'react-intl';
 
 const messages = defineMessages({
   discovermusic: 'Music',
-  popularartists: 'Popular Artists',
-  topalbums: 'Top Albums',
-  recentalbums: 'Recently Added Albums',
-  allartists: 'All Artists',
+  topArtists: 'Top 50 Artists',
+  topAlbums: 'Top 50 Albums',
+  topTracks: 'Top 50 Tracks',
+  trendingArtists: 'Trending Artists',
+  recentAlbums: 'Recently Added Albums',
+  myArtists: 'My Artists',
 });
 
 const DiscoverMusic = () => {
@@ -23,27 +25,38 @@ const DiscoverMusic = () => {
       </div>
 
       <MusicSlider
-        sliderKey="popular-artists"
-        title={intl.formatMessage(messages.popularartists)}
-        url="/api/v1/discover/music/popular-artists"
-        linkUrl="/discover/music?sortBy=albumCount"
+        sliderKey="lastfm-top-artists"
+        title={intl.formatMessage(messages.topArtists)}
+        url="/api/v1/discover/music/lastfm/top-artists"
+      />
+
+      <MusicSlider
+        sliderKey="lastfm-top-albums"
+        title={intl.formatMessage(messages.topAlbums)}
+        url="/api/v1/discover/music/lastfm/top-albums"
+      />
+
+      <MusicSlider
+        sliderKey="lastfm-top-tracks"
+        title={intl.formatMessage(messages.topTracks)}
+        url="/api/v1/discover/music/lastfm/top-tracks"
+      />
+
+      <MusicSlider
+        sliderKey="lastfm-trending-artists"
+        title={intl.formatMessage(messages.trendingArtists)}
+        url="/api/v1/discover/music/lastfm/trending-artists"
       />
 
       <MusicSlider
         sliderKey="recent-albums"
-        title={intl.formatMessage(messages.recentalbums)}
+        title={intl.formatMessage(messages.recentAlbums)}
         url="/api/v1/discover/music/recent-albums"
       />
 
       <MusicSlider
-        sliderKey="top-albums"
-        title={intl.formatMessage(messages.topalbums)}
-        url="/api/v1/discover/music/top-albums"
-      />
-
-      <MusicSlider
-        sliderKey="all-artists"
-        title={intl.formatMessage(messages.allartists)}
+        sliderKey="my-artists"
+        title={intl.formatMessage(messages.myArtists)}
         url="/api/v1/discover/music"
         linkUrl="/discover/music?sortBy=name"
       />

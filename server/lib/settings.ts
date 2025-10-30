@@ -44,6 +44,10 @@ export interface TautulliSettings {
   externalUrl?: string;
 }
 
+export interface LastfmSettings {
+  apiKey?: string;
+}
+
 export interface DVRSettings {
   id: number;
   name: string;
@@ -270,6 +274,7 @@ interface AllSettings {
   main: MainSettings;
   plex: PlexSettings;
   tautulli: TautulliSettings;
+  lastfm: LastfmSettings;
   radarr: RadarrSettings[];
   sonarr: SonarrSettings[];
   lidarr: LidarrSettings[];
@@ -319,6 +324,7 @@ class Settings {
         libraries: [],
       },
       tautulli: {},
+      lastfm: {},
       radarr: [],
       sonarr: [],
       lidarr: [],
@@ -477,6 +483,14 @@ class Settings {
 
   set tautulli(data: TautulliSettings) {
     this.data.tautulli = data;
+  }
+
+  get lastfm(): LastfmSettings {
+    return this.data.lastfm;
+  }
+
+  set lastfm(data: LastfmSettings) {
+    this.data.lastfm = data;
   }
 
   get radarr(): RadarrSettings[] {

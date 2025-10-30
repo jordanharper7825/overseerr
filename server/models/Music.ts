@@ -2,6 +2,11 @@ import type {
   LidarrAlbum,
   LidarrArtist,
 } from '@server/api/servarr/lidarr';
+import type {
+  LastfmAlbum,
+  LastfmArtist,
+  LastfmTrack,
+} from '@server/api/lastfm/interfaces';
 import { MediaType as MainMediaType } from '@server/constants/media';
 import type Media from '@server/entity/Media';
 
@@ -107,6 +112,115 @@ export const mapAlbumResult = (
     duration: albumResult.duration,
     trackCount,
     posterPath,
+    mediaInfo: media,
+  };
+};
+
+// Helper to create a simple hash for Last.fm items (since they don't have numeric IDs)
+const simpleHash = (str: string): number => {
+  let hash = 0;
+  for (let i = 0; i < str.length; i++) {
+    const char = str.charCodeAt(i);
+    hash = (hash << 5) - hash + char;
+    hash = hash & hash; // Convert to 32bit integer
+  }
+  return Math.abs(hash);
+};
+
+export const mapLastfmArtistResult = (
+  artist: LastfmArtist,
+  media?: Media
+): ArtistResult => {
+  // Use MBID if available, otherwise hash the artist name
+  const id = artist.mbid ? simpleHash(artist.mbid) : simpleHash(artist.name);
+
+  // Get largest image
+  const posterImage =
+    artist.image?.find((img) => img.size === 'extralarge') ||
+    artist.image?.find((img) => img.size === 'large') ||
+    artist.image?.find((img) => img.size === 'medium');
+
+  return {
+    id,
+    mediaType: 'artist',
+    name: artist.name,
+    foreignId: artist.mbid || '',
+    overview: '', // Last.fm doesn't provide overview in chart endpoints
+    posterPath: posterImage?.['#text'],
+    mediaInfo: media,
+  };
+};
+
+export const mapLastfmAlbumResult = (
+  album: LastfmAlbum,
+  media?: Media
+): AlbumResult => {
+  // Use MBID if available, otherwise hash the album name + artist name
+  const id = album.mbid
+    ? simpleHash(album.mbid)
+    : simpleHash(album.name + album.artist.name);
+
+  const artistId = album.artist.mbid
+    ? simpleHash(album.artist.mbid)
+    : simpleHash(album.artist.name);
+
+  // Get largest image
+  const coverImage =
+    album.image?.find((img) => img.size === 'extralarge') ||
+    album.image?.find((img) => img.size === 'large') ||
+    album.image?.find((img) => img.size === 'medium');
+
+  return {
+    id,
+    mediaType: 'album',
+    title: album.name,
+    foreignId: album.mbid || '',
+    artistId,
+    artistName: album.artist.name,
+    overview: '', // Last.fm doesn't provide overview in chart endpoints
+    posterPath: coverImage?.['#text'],
+    mediaInfo: media,
+  };
+};
+
+export interface TrackResult extends MusicSearchResult {
+  mediaType: 'album'; // Tracks are represented as albums in our UI
+  title: string;
+  foreignId: string;
+  artistId: number;
+  artistName: string;
+  duration?: number;
+}
+
+export const mapLastfmTrackResult = (
+  track: LastfmTrack,
+  media?: Media
+): TrackResult => {
+  // Use MBID if available, otherwise hash the track name + artist name
+  const id = track.mbid
+    ? simpleHash(track.mbid)
+    : simpleHash(track.name + track.artist.name);
+
+  const artistId = track.artist.mbid
+    ? simpleHash(track.artist.mbid)
+    : simpleHash(track.artist.name);
+
+  // Get largest image
+  const coverImage =
+    track.image?.find((img) => img.size === 'extralarge') ||
+    track.image?.find((img) => img.size === 'large') ||
+    track.image?.find((img) => img.size === 'medium');
+
+  return {
+    id,
+    mediaType: 'album', // Represent tracks as albums for UI consistency
+    title: track.name,
+    foreignId: track.mbid || '',
+    artistId,
+    artistName: track.artist.name,
+    overview: '',
+    duration: track.duration ? parseInt(track.duration, 10) : undefined,
+    posterPath: coverImage?.['#text'],
     mediaInfo: media,
   };
 };

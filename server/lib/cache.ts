@@ -5,6 +5,7 @@ export type AvailableCacheIds =
   | 'radarr'
   | 'sonarr'
   | 'lidarr'
+  | 'lastfm'
   | 'rt'
   | 'imdb'
   | 'github'
@@ -51,6 +52,10 @@ class CacheManager {
     radarr: new Cache('radarr', 'Radarr API'),
     sonarr: new Cache('sonarr', 'Sonarr API'),
     lidarr: new Cache('lidarr', 'Lidarr API'),
+    lastfm: new Cache('lastfm', 'Last.fm API', {
+      stdTtl: 3600, // 1 hour cache for charts
+      checkPeriod: 60 * 15,
+    }),
     rt: new Cache('rt', 'Rotten Tomatoes API', {
       stdTtl: 43200,
       checkPeriod: 60 * 30,

@@ -1,3 +1,4 @@
+import LastfmAPI from '@server/api/lastfm';
 import PlexTvAPI from '@server/api/plextv';
 import LidarrAPI from '@server/api/servarr/lidarr';
 import type { SortOptions } from '@server/api/themoviedb';
@@ -14,7 +15,12 @@ import type {
 import { getSettings } from '@server/lib/settings';
 import logger from '@server/logger';
 import { mapProductionCompany } from '@server/models/Movie';
-import { mapArtistResult } from '@server/models/Music';
+import {
+  mapArtistResult,
+  mapLastfmAlbumResult,
+  mapLastfmArtistResult,
+  mapLastfmTrackResult,
+} from '@server/models/Music';
 import {
   mapCollectionResult,
   mapMovieResult,
@@ -1252,5 +1258,179 @@ discoverRoutes.get<Record<string, unknown>, WatchlistResponse>(
     });
   }
 );
+
+// Last.fm Global Chart Routes
+discoverRoutes.get('/music/lastfm/top-artists', async (req, res) => {
+  try {
+    const settings = getSettings();
+
+    if (!settings.lastfm.apiKey) {
+      return res.status(200).json({
+        page: 1,
+        totalPages: 1,
+        totalResults: 0,
+        results: [],
+      });
+    }
+
+    const lastfm = new LastfmAPI(settings.lastfm.apiKey);
+    const page = Number(req.query.page) || 1;
+    const limit = 50;
+
+    const data = await lastfm.getChartTopArtists({ page, limit });
+
+    const mappedResults = data.artists.artist.map((artist) =>
+      mapLastfmArtistResult(artist)
+    );
+
+    return res.status(200).json({
+      page: parseInt(data.artists['@attr'].page, 10),
+      totalPages: parseInt(data.artists['@attr'].totalPages, 10),
+      totalResults: parseInt(data.artists['@attr'].total, 10),
+      results: mappedResults,
+    });
+  } catch (e) {
+    logger.error('Error retrieving Last.fm top artists', {
+      label: 'API',
+      errorMessage: e instanceof Error ? e.message : String(e),
+    });
+    return res.status(200).json({
+      page: 1,
+      totalPages: 1,
+      totalResults: 0,
+      results: [],
+    });
+  }
+});
+
+discoverRoutes.get('/music/lastfm/top-albums', async (req, res) => {
+  try {
+    const settings = getSettings();
+
+    if (!settings.lastfm.apiKey) {
+      return res.status(200).json({
+        page: 1,
+        totalPages: 1,
+        totalResults: 0,
+        results: [],
+      });
+    }
+
+    const lastfm = new LastfmAPI(settings.lastfm.apiKey);
+    const page = Number(req.query.page) || 1;
+    const limit = 50;
+
+    const data = await lastfm.getTopAlbums({ page, limit });
+
+    const mappedResults = data.albums.album.map((album) =>
+      mapLastfmAlbumResult(album)
+    );
+
+    return res.status(200).json({
+      page: parseInt(data.albums['@attr'].page, 10),
+      totalPages: parseInt(data.albums['@attr'].totalPages, 10),
+      totalResults: parseInt(data.albums['@attr'].total, 10),
+      results: mappedResults,
+    });
+  } catch (e) {
+    logger.error('Error retrieving Last.fm top albums', {
+      label: 'API',
+      errorMessage: e instanceof Error ? e.message : String(e),
+    });
+    return res.status(200).json({
+      page: 1,
+      totalPages: 1,
+      totalResults: 0,
+      results: [],
+    });
+  }
+});
+
+discoverRoutes.get('/music/lastfm/top-tracks', async (req, res) => {
+  try {
+    const settings = getSettings();
+
+    if (!settings.lastfm.apiKey) {
+      return res.status(200).json({
+        page: 1,
+        totalPages: 1,
+        totalResults: 0,
+        results: [],
+      });
+    }
+
+    const lastfm = new LastfmAPI(settings.lastfm.apiKey);
+    const page = Number(req.query.page) || 1;
+    const limit = 50;
+
+    const data = await lastfm.getChartTopTracks({ page, limit });
+
+    const mappedResults = data.tracks.track.map((track) =>
+      mapLastfmTrackResult(track)
+    );
+
+    return res.status(200).json({
+      page: parseInt(data.tracks['@attr'].page, 10),
+      totalPages: parseInt(data.tracks['@attr'].totalPages, 10),
+      totalResults: parseInt(data.tracks['@attr'].total, 10),
+      results: mappedResults,
+    });
+  } catch (e) {
+    logger.error('Error retrieving Last.fm top tracks', {
+      label: 'API',
+      errorMessage: e instanceof Error ? e.message : String(e),
+    });
+    return res.status(200).json({
+      page: 1,
+      totalPages: 1,
+      totalResults: 0,
+      results: [],
+    });
+  }
+});
+
+discoverRoutes.get('/music/lastfm/trending-artists', async (req, res) => {
+  try {
+    const settings = getSettings();
+
+    if (!settings.lastfm.apiKey) {
+      return res.status(200).json({
+        page: 1,
+        totalPages: 1,
+        totalResults: 0,
+        results: [],
+      });
+    }
+
+    const lastfm = new LastfmAPI(settings.lastfm.apiKey);
+    const page = Number(req.query.page) || 1;
+    const limit = 50;
+
+    // Use top artists as trending (Last.fm doesn't have a specific trending endpoint)
+    const data = await lastfm.getChartTopArtists({ page, limit });
+
+    const mappedResults = data.artists.artist.map((artist) =>
+      mapLastfmArtistResult(artist)
+    );
+
+    return res.status(200).json({
+      page: parseInt(data.artists['@attr'].page, 10),
+      totalPages: parseInt(data.artists['@attr'].totalPages, 10),
+      totalResults: parseInt(data.artists['@attr'].total, 10),
+      results: mappedResults,
+    });
+  } catch (e) {
+    logger.error('Error retrieving Last.fm trending artists', {
+      label: 'API',
+      errorMessage: e instanceof Error ? e.message : String(e),
+    });
+    return res.status(200).json({
+      page: 1,
+      totalPages: 1,
+      totalResults: 0,
+      results: [],
+    });
+  }
+});
 
 export default discoverRoutes;
