@@ -92,6 +92,38 @@ export interface AddAlbumOptions {
   searchForNewAlbum?: boolean;
 }
 
+export interface LidarrTrackFile {
+  id: number;
+  path: string;
+  size: number;
+  dateAdded: string;
+  quality: {
+    quality: {
+      id: number;
+      name: string;
+    };
+    revision: {
+      version: number;
+      real: number;
+    };
+  };
+}
+
+export interface LidarrTrack {
+  id: number;
+  trackNumber: string;
+  title: string;
+  explicit: boolean;
+  trackFileId?: number;
+  hasFile: boolean;
+  monitored: boolean;
+  duration: number;
+  albumId: number;
+  artistId: number;
+  trackFile?: LidarrTrackFile;
+  mediumNumber: number;
+}
+
 class LidarrAPI extends ServarrBase<{ artistId?: number; albumId?: number }> {
   constructor({ url, apiKey }: { url: string; apiKey: string }) {
     super({ url, apiKey, cacheName: 'lidarr', apiName: 'Lidarr' });
@@ -105,7 +137,10 @@ class LidarrAPI extends ServarrBase<{ artistId?: number; albumId?: number }> {
       if (typeof response.data === 'string') {
         const dataStr = response.data as string;
         throw new Error(
-          `[Lidarr] API returned HTML instead of JSON. This usually means the base URL is incorrect. Response: ${dataStr.substring(0, 200)}`
+          `[Lidarr] API returned HTML instead of JSON. This usually means the base URL is incorrect. Response: ${dataStr.substring(
+            0,
+            200
+          )}`
         );
       }
 
@@ -386,6 +421,24 @@ class LidarrAPI extends ServarrBase<{ artistId?: number; albumId?: number }> {
         errorMessage: e.message,
         albumId,
       });
+    }
+  }
+
+  public async getTracks(albumId: number): Promise<LidarrTrack[]> {
+    try {
+      const response = await this.axios.get<LidarrTrack[]>('/track', {
+        params: {
+          albumId,
+        },
+      });
+      return response.data;
+    } catch (e) {
+      logger.error('Error retrieving tracks for album', {
+        label: 'Lidarr API',
+        errorMessage: e.message,
+        albumId,
+      });
+      return [];
     }
   }
 }

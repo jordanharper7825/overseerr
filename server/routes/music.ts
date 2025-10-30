@@ -51,6 +51,41 @@ musicRoutes.get('/album/:albumId', async (req, res, next) => {
   }
 });
 
+musicRoutes.get('/album/:albumId/tracks', async (req, res, next) => {
+  const settings = getSettings();
+
+  try {
+    const lidarrSettings = settings.lidarr.find((lidarr) => lidarr.isDefault);
+
+    if (!lidarrSettings) {
+      return next({
+        status: 404,
+        message: 'No Lidarr instance configured.',
+      });
+    }
+
+    const apiUrl = LidarrAPI.buildUrl(lidarrSettings, '/api/v1');
+    const lidarrApi = new LidarrAPI({
+      url: apiUrl,
+      apiKey: lidarrSettings.apiKey,
+    });
+
+    const tracks = await lidarrApi.getTracks(Number(req.params.albumId));
+
+    return res.status(200).json(tracks);
+  } catch (e) {
+    logger.debug('Something went wrong retrieving tracks for album', {
+      label: 'API',
+      errorMessage: e.message,
+      albumId: req.params.albumId,
+    });
+    return next({
+      status: 500,
+      message: 'Unable to retrieve tracks for album.',
+    });
+  }
+});
+
 musicRoutes.get('/:artistId/albums', async (req, res, next) => {
   const settings = getSettings();
 

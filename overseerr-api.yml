@@ -6119,6 +6119,54 @@ paths:
                     example: 10
         '404':
           description: Artist not found
+  /music/album/{albumId}/tracks:
+    get:
+      summary: Get tracks for an album
+      description: Returns a list of tracks for the specified album from Lidarr.
+      tags:
+        - music
+      parameters:
+        - in: path
+          name: albumId
+          required: true
+          schema:
+            type: number
+            example: 1
+      responses:
+        '200':
+          description: List of tracks
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    id:
+                      type: number
+                      example: 1
+                    trackNumber:
+                      type: string
+                      example: "1"
+                    title:
+                      type: string
+                      example: Track Title
+                    explicit:
+                      type: boolean
+                      example: false
+                    hasFile:
+                      type: boolean
+                      example: true
+                    duration:
+                      type: number
+                      example: 180000
+                    mediumNumber:
+                      type: number
+                      example: 1
+        '404':
+          description: Album not found
+        '500':
+          description: Unable to retrieve tracks
   /music/{artistId}/albums:
     get:
       summary: Get albums by artist
