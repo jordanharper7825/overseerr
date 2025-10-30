@@ -954,7 +954,8 @@ discoverRoutes.get('/music', async (req, res, next) => {
   } catch (e) {
     logger.error('Something went wrong retrieving music', {
       label: 'API',
-      errorMessage: e.message,
+      errorMessage: e instanceof Error ? e.message : String(e),
+      stack: e instanceof Error ? e.stack : undefined,
     });
     // Return empty results instead of 500 error
     return res.status(200).json({
