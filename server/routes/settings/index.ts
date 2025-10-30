@@ -305,7 +305,7 @@ settingsRoutes.post('/lastfm', async (req, res, next) => {
     } catch (e) {
       logger.error('Something went wrong testing Last.fm connection', {
         label: 'API',
-        errorMessage: e.message,
+        errorMessage: e instanceof Error ? e.message : String(e),
       });
       return next({
         status: 500,
