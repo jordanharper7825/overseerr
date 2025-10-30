@@ -891,16 +891,19 @@ discoverRoutes.get('/music', async (req, res, next) => {
     switch (sortBy) {
       case 'name':
         // Sort alphabetically by artist name
-        sortedArtists.sort((a, b) =>
-          a.artistName.localeCompare(b.artistName)
-        );
+        sortedArtists.sort((a, b) => {
+          const nameA = a.artistName || '';
+          const nameB = b.artistName || '';
+          return nameA.localeCompare(nameB);
+        });
         break;
       case 'dateAdded':
         // Sort by date added (most recent first)
-        sortedArtists.sort(
-          (a, b) =>
-            new Date(b.added).getTime() - new Date(a.added).getTime()
-        );
+        sortedArtists.sort((a, b) => {
+          const dateA = a.added ? new Date(a.added).getTime() : 0;
+          const dateB = b.added ? new Date(b.added).getTime() : 0;
+          return dateB - dateA;
+        });
         break;
       case 'albumCount':
       default:
