@@ -9,6 +9,7 @@ const messages = defineMessages({
   menuUsers: 'Users',
   menuPlexSettings: 'Plex',
   menuServices: 'Services',
+  menuLastfm: 'Last.fm',
   menuNotifications: 'Notifications',
   menuLogs: 'Logs',
   menuJobs: 'Jobs & Cache',
@@ -42,6 +43,11 @@ const SettingsLayout = ({ children }: SettingsLayoutProps) => {
       text: intl.formatMessage(messages.menuServices),
       route: '/settings/services',
       regex: /^\/settings\/services/,
+    },
+    {
+      text: intl.formatMessage(messages.menuLastfm),
+      route: '/settings/lastfm',
+      regex: /^\/settings\/lastfm/,
     },
     {
       text: intl.formatMessage(messages.menuNotifications),

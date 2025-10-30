@@ -1,3 +1,4 @@
+import LastfmAPI from '@server/api/lastfm';
 import PlexAPI from '@server/api/plexapi';
 import PlexTvAPI from '@server/api/plextv';
 import TautulliAPI from '@server/api/tautulli';
@@ -280,6 +281,42 @@ settingsRoutes.post('/tautulli', async (req, res, next) => {
   }
 
   return res.status(200).json(settings.tautulli);
+});
+
+settingsRoutes.get('/lastfm', (_req, res) => {
+  const settings = getSettings();
+
+  res.status(200).json(settings.lastfm);
+});
+
+settingsRoutes.post('/lastfm', async (req, res, next) => {
+  const settings = getSettings();
+
+  Object.assign(settings.lastfm, req.body);
+
+  if (settings.lastfm.apiKey) {
+    try {
+      const lastfmClient = new LastfmAPI(settings.lastfm.apiKey);
+
+      // Test the API key by making a simple request
+      await lastfmClient.getChartTopArtists({ limit: 1 });
+
+      settings.save();
+    } catch (e) {
+      logger.error('Something went wrong testing Last.fm connection', {
+        label: 'API',
+        errorMessage: e.message,
+      });
+      return next({
+        status: 500,
+        message: 'Unable to connect to Last.fm. Please check your API key.',
+      });
+    }
+  } else {
+    settings.save();
+  }
+
+  return res.status(200).json(settings.lastfm);
 });
 
 settingsRoutes.get(
