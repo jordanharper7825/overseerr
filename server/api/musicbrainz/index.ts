@@ -2,6 +2,7 @@ import ExternalAPI from '@server/api/externalapi';
 import cacheManager from '@server/lib/cache';
 import type {
   MusicBrainzArtistResponse,
+  MusicBrainzArtistSearchResponse,
   MusicBrainzReleaseGroupsResponse,
 } from './interfaces';
 
@@ -61,6 +62,25 @@ class MusicBrainzAPI extends ExternalAPI {
           ...(type && { type: type.join('|') }),
           limit,
           offset,
+        },
+      },
+      3600 // Cache for 1 hour
+    );
+  }
+
+  /**
+   * Search for artists by name
+   */
+  public async searchArtists(
+    query: string,
+    limit = 5
+  ): Promise<MusicBrainzArtistSearchResponse> {
+    return this.get<MusicBrainzArtistSearchResponse>(
+      '/artist',
+      {
+        params: {
+          query,
+          limit,
         },
       },
       3600 // Cache for 1 hour

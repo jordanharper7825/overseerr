@@ -6381,6 +6381,55 @@ paths:
                       example: 12
         '404':
           description: Artist not found
+  /music/search/{artistName}:
+    get:
+      summary: Search for artist by name
+      description: Searches for an artist by name using Last.fm and MusicBrainz. Returns artist details in a JSON object.
+      tags:
+        - music
+      parameters:
+        - in: path
+          name: artistName
+          required: true
+          schema:
+            type: string
+            example: Radiohead
+      responses:
+        '200':
+          description: Artist details
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  id:
+                    type: number
+                    example: 1234567
+                  mediaType:
+                    type: string
+                    example: artist
+                  name:
+                    type: string
+                    example: Radiohead
+                  foreignId:
+                    type: string
+                    example: 83d91898-7763-47d7-b03b-b92132375c47
+                  overview:
+                    type: string
+                    example: rock, alternative, indie
+                  posterPath:
+                    type: string
+                    example: https://lastfm.freetls.fastly.net/i/u/300x300/artist.jpg
+                  artistType:
+                    type: string
+                    example: Group
+                  albumCount:
+                    type: number
+                    example: 20
+        '404':
+          description: Artist not found
+        '500':
+          description: Unable to find artist
   /music/mbid/{mbid}:
     get:
       summary: Get artist details from MusicBrainz

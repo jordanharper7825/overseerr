@@ -148,7 +148,8 @@ export const mapLastfmArtistResult = (
     id,
     mediaType: 'artist',
     name: artist.name,
-    foreignId: artist.mbid || '',
+    // If no MBID, use artist name prefixed with 'name:' for routing to search endpoint
+    foreignId: artist.mbid || `name:${artist.name}`,
     overview: '', // Last.fm doesn't provide overview in chart endpoints
     posterPath: posterImage?.['#text'],
     mediaInfo: media,

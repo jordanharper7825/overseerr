@@ -75,3 +75,9 @@ export interface MusicBrainzReleaseGroupsResponse {
   'release-group-count': number;
   'release-group-offset': number;
 }
+
+export interface MusicBrainzArtistSearchResponse {
+  artists: MusicBrainzArtist[];
+  count: number;
+  offset: number;
+}

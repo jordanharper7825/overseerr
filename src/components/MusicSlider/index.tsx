@@ -64,8 +64,13 @@ const MusicSlider = ({
   const finalTitles = titles.slice(0, 20).map((item) => {
     if (item.mediaType === 'artist') {
       const artist = item as ArtistResult;
-      // Use foreignId (MBID) if available, otherwise use numeric ID
-      const artistId = artist.foreignId || artist.id;
+      // Determine artist ID for routing:
+      // - If foreignId is a valid UUID (MBID), use it
+      // - If foreignId starts with 'name:', extract the name for search routing
+      // - Otherwise use numeric ID (Lidarr)
+      const isMBID = artist.foreignId && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(artist.foreignId);
+      const isNameSearch = artist.foreignId && artist.foreignId.startsWith('name:');
+      const artistId = isMBID ? artist.foreignId : isNameSearch ? artist.foreignId.substring(5) : artist.id;
       return (
         <TitleCard
           key={`artist-${artist.id}`}

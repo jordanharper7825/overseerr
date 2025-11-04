@@ -23,6 +23,73 @@ const isMBID = (str: string): boolean => {
 };
 
 // Specific routes must come before parameterized routes
+// Artist search/lookup by name (for Last.fm artists without MBIDs)
+musicRoutes.get('/search/:artistName', async (req, res, next) => {
+  const artistName = decodeURIComponent(req.params.artistName);
+  const settings = getSettings();
+
+  try {
+    const musicbrainz = new MusicBrainzAPI();
+    let mbid: string | undefined;
+    let posterPath: string | undefined;
+
+    // Try to get artist info from Last.fm for MBID and image
+    if (settings.lastfm.apiKey) {
+      try {
+        const lastfm = new LastfmAPI(settings.lastfm.apiKey);
+        const artistInfo = await lastfm.getArtistInfo(artistName);
+
+        mbid = artistInfo.artist.mbid;
+        const posterImage =
+          artistInfo.artist.image?.find((img) => img.size === 'extralarge') ||
+          artistInfo.artist.image?.find((img) => img.size === 'large');
+        posterPath = posterImage?.['#text'];
+      } catch (e) {
+        logger.debug('Could not fetch artist from Last.fm', {
+          label: 'API',
+          artistName,
+        });
+      }
+    }
+
+    // If we have an MBID from Last.fm, use it directly
+    if (mbid) {
+      const artistData = await musicbrainz.getArtist(mbid);
+      return res
+        .status(200)
+        .json(mapMusicBrainzArtistResult(artistData.artist, posterPath));
+    }
+
+    // Otherwise, search MusicBrainz by name
+    const searchResults = await musicbrainz.searchArtists(artistName, 1);
+
+    if (!searchResults.artists || searchResults.artists.length === 0) {
+      return next({
+        status: 404,
+        message: 'Artist not found.',
+      });
+    }
+
+    // Use the first search result
+    const artist = searchResults.artists[0];
+    const artistData = await musicbrainz.getArtist(artist.id);
+
+    return res
+      .status(200)
+      .json(mapMusicBrainzArtistResult(artistData.artist, posterPath));
+  } catch (e) {
+    logger.error('Something went wrong searching for artist', {
+      label: 'API',
+      errorMessage: e instanceof Error ? e.message : String(e),
+      artistName,
+    });
+    return next({
+      status: 500,
+      message: 'Unable to find artist.',
+    });
+  }
+});
+
 // MusicBrainz artist route (handles MBID format)
 musicRoutes.get('/mbid/:mbid', async (req, res, next) => {
   const mbid = req.params.mbid;
