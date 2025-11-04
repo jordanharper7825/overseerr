@@ -18,7 +18,7 @@ import { Fragment, useCallback, useEffect, useState } from 'react';
 import { useIntl } from 'react-intl';
 
 interface TitleCardProps {
-  id: number;
+  id: number | string;
   image?: string;
   summary?: string;
   year?: string;
@@ -90,7 +90,7 @@ const TitleCard = ({
     >
       {mediaType !== 'artist' && mediaType !== 'album' && (
         <RequestModal
-          tmdbId={id}
+          tmdbId={typeof id === 'number' ? id : parseInt(String(id), 10)}
           show={showRequestModal}
           type={
             mediaType === 'movie'
