@@ -4,7 +4,7 @@ import TmdbTitleCard from '@app/components/TitleCard/TmdbTitleCard';
 import useVerticalScroll from '@app/hooks/useVerticalScroll';
 import globalMessages from '@app/i18n/globalMessages';
 import type { WatchlistItem } from '@server/interfaces/api/discoverInterfaces';
-import type { ArtistResult } from '@server/models/Music';
+import type { AlbumResult, ArtistResult } from '@server/models/Music';
 import type {
   CollectionResult,
   MovieResult,
@@ -20,6 +20,7 @@ type ListViewProps = {
     | PersonResult
     | CollectionResult
     | ArtistResult
+    | AlbumResult
   )[];
   plexItems?: WatchlistItem[];
   isEmpty?: boolean;
@@ -130,6 +131,23 @@ const ListView = ({
                   title={title.name}
                   year={title.albumCount ? `${title.albumCount} Albums` : ''}
                   mediaType="artist"
+                  inProgress={
+                    (title.mediaInfo?.downloadStatus ?? []).length > 0
+                  }
+                  canExpand
+                />
+              );
+              break;
+            case 'album':
+              titleCard = (
+                <TitleCard
+                  id={title.id}
+                  image={title.posterPath}
+                  status={title.mediaInfo?.status}
+                  summary={title.overview}
+                  title={title.title}
+                  year={title.trackCount ? `${title.trackCount} Tracks` : ''}
+                  mediaType="album"
                   inProgress={
                     (title.mediaInfo?.downloadStatus ?? []).length > 0
                   }

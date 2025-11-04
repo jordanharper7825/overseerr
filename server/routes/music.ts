@@ -222,6 +222,17 @@ musicRoutes.get('/album/mbid/:mbid', async (req, res, next) => {
     // Fetch release group (album) details from MusicBrainz
     const releaseGroup = await musicbrainz.getReleaseGroup(mbid);
 
+    // Validate artist credit exists
+    if (
+      !releaseGroup['artist-credit'] ||
+      releaseGroup['artist-credit'].length === 0
+    ) {
+      return next({
+        status: 500,
+        message: 'Album does not have artist information.',
+      });
+    }
+
     // Get artist details to include artist name
     const artist = await musicbrainz.getArtist(
       releaseGroup['artist-credit'][0].artist.id

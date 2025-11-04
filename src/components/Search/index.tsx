@@ -3,6 +3,7 @@ import ListView from '@app/components/Common/ListView';
 import PageTitle from '@app/components/Common/PageTitle';
 import useDiscover from '@app/hooks/useDiscover';
 import Error from '@app/pages/_error';
+import type { MusicResults } from '@server/models/Music';
 import type {
   MovieResult,
   PersonResult,
@@ -28,7 +29,7 @@ const Search = () => {
     titles,
     fetchMore,
     error,
-  } = useDiscover<MovieResult | TvResult | PersonResult>(
+  } = useDiscover<MovieResult | TvResult | PersonResult | MusicResults>(
     `/api/v1/search`,
     {
       query: router.query.query,
