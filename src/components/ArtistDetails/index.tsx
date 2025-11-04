@@ -1,11 +1,15 @@
+import Button from '@app/components/Common/Button';
 import CachedImage from '@app/components/Common/CachedImage';
 import LoadingSpinner from '@app/components/Common/LoadingSpinner';
 import PageTitle from '@app/components/Common/PageTitle';
 import Tag from '@app/components/Common/Tag';
 import Error from '@app/pages/_error';
 import type { ArtistResult, AlbumResult } from '@server/models/Music';
+import { ArrowDownTrayIcon } from '@heroicons/react/24/outline';
+import axios from 'axios';
 import Link from 'next/link';
 import { defineMessages, useIntl } from 'react-intl';
+import { useState } from 'react';
 import useSWR from 'swr';
 
 const messages = defineMessages({
@@ -15,6 +19,9 @@ const messages = defineMessages({
   overviewunavailable: 'Overview unavailable.',
   albums: 'Albums',
   disambiguation: 'Disambiguation',
+  request: 'Request Artist',
+  requestsuccess: 'Artist requested successfully!',
+  requesterror: 'Failed to request artist.',
 });
 
 interface ArtistDetailsProps {
@@ -23,6 +30,10 @@ interface ArtistDetailsProps {
 
 const ArtistDetails = ({ artist }: ArtistDetailsProps) => {
   const intl = useIntl();
+  const [isRequesting, setIsRequesting] = useState(false);
+  const [requestStatus, setRequestStatus] = useState<'idle' | 'success' | 'error'>('idle');
+  const [requestingAlbumId, setRequestingAlbumId] = useState<number | null>(null);
+  const [requestedAlbums, setRequestedAlbums] = useState<Set<number>>(new Set());
 
   // Check if foreignId is a UUID (MBID) or if we should use the numeric ID
   const isMBID = artist?.foreignId && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(artist.foreignId);
@@ -36,6 +47,56 @@ const ArtistDetails = ({ artist }: ArtistDetailsProps) => {
   const { data: albumData, error: albumError } = useSWR<AlbumResult[]>(
     albumsEndpoint
   );
+
+  const handleRequestArtist = async () => {
+    if (!artist || !isMBID) return;
+
+    setIsRequesting(true);
+    setRequestStatus('idle');
+
+    try {
+      await axios.post('/api/v1/music/request', {
+        foreignArtistId: artist.foreignId,
+        artistName: artist.name,
+        monitored: true,
+        searchForMissingAlbums: false,
+      });
+      setRequestStatus('success');
+      // Reload the page after a short delay to show the updated status
+      setTimeout(() => {
+        window.location.reload();
+      }, 1500);
+    } catch (error) {
+      console.error('Failed to request artist:', error);
+      setRequestStatus('error');
+    } finally {
+      setIsRequesting(false);
+    }
+  };
+
+  const handleRequestAlbum = async (album: AlbumResult) => {
+    if (!artist || !album.foreignId) return;
+
+    setRequestingAlbumId(album.id);
+
+    try {
+      await axios.post('/api/v1/music/album/request', {
+        foreignAlbumId: album.foreignId,
+        title: album.title,
+        artistId: artist.id,
+        monitored: true,
+        searchForNewAlbum: false,
+      });
+      setRequestedAlbums(prev => new Set([...prev, album.id]));
+    } catch (error) {
+      console.error('Failed to request album:', error);
+    } finally {
+      setRequestingAlbumId(null);
+    }
+  };
+
+  // Show request button only for MusicBrainz artists not in Lidarr
+  const showRequestButton = isMBID && !artist?.mediaInfo;
 
   if (!artist) {
     return <LoadingSpinner />;
@@ -104,6 +165,25 @@ const ArtistDetails = ({ artist }: ArtistDetailsProps) => {
               </Tag>
             )}
           </div>
+          {showRequestButton && (
+            <div className="mt-4 flex justify-center md:justify-start">
+              <Button
+                buttonType={requestStatus === 'success' ? 'success' : requestStatus === 'error' ? 'danger' : 'primary'}
+                onClick={handleRequestArtist}
+                disabled={isRequesting || requestStatus === 'success'}
+                className="w-full md:w-auto"
+              >
+                <ArrowDownTrayIcon />
+                <span>
+                  {requestStatus === 'success'
+                    ? intl.formatMessage(messages.requestsuccess)
+                    : requestStatus === 'error'
+                    ? intl.formatMessage(messages.requesterror)
+                    : intl.formatMessage(messages.request)}
+                </span>
+              </Button>
+            </div>
+          )}
         </div>
       </div>
 
@@ -139,23 +219,55 @@ const ArtistDetails = ({ artist }: ArtistDetailsProps) => {
           )}
           {albumData && albumData.length > 0 && (
             <div className="mt-4 grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6">
-              {albumData.map((album) => (
-                <Link key={album.id} href={`/album/${album.id}`}>
-                  <a className="cursor-pointer rounded-lg bg-gray-800 p-2 transition hover:bg-gray-700 block">
-                    {album.posterPath && (
-                      <CachedImage
-                        src={album.posterPath}
-                        alt={album.title}
-                        width={200}
-                        height={200}
-                        className="rounded"
-                      />
-                    )}
-                    {!album.posterPath && (
-                      <div className="flex h-48 w-full items-center justify-center rounded bg-gray-700">
-                        <span className="text-xs text-gray-400">No Image</span>
-                      </div>
-                    )}
+              {albumData.map((album) => {
+                // Only Lidarr albums (from non-MBID artists) are clickable
+                // MusicBrainz albums need to be requested first
+                const isLidarrAlbum = !isMBID;
+                const isRequested = requestedAlbums.has(album.id);
+                const isRequesting = requestingAlbumId === album.id;
+
+                const albumCard = (
+                  <div className={`rounded-lg bg-gray-800 p-2 transition ${isLidarrAlbum ? 'cursor-pointer hover:bg-gray-700' : ''}`}>
+                    <div className="relative">
+                      {album.posterPath && (
+                        <CachedImage
+                          src={album.posterPath}
+                          alt={album.title}
+                          width={200}
+                          height={200}
+                          className="rounded"
+                        />
+                      )}
+                      {!album.posterPath && (
+                        <div className="flex h-48 w-full items-center justify-center rounded bg-gray-700">
+                          <span className="text-xs text-gray-400">No Image</span>
+                        </div>
+                      )}
+                      {!isLidarrAlbum && !isRequested && (
+                        <div className="absolute inset-0 flex items-center justify-center bg-black bg-opacity-60 opacity-0 transition-opacity hover:opacity-100">
+                          <Button
+                            buttonType="primary"
+                            buttonSize="sm"
+                            onClick={(e) => {
+                              e.preventDefault();
+                              e.stopPropagation();
+                              handleRequestAlbum(album);
+                            }}
+                            disabled={isRequesting}
+                          >
+                            <ArrowDownTrayIcon className="h-4 w-4" />
+                            <span>Request</span>
+                          </Button>
+                        </div>
+                      )}
+                      {isRequested && (
+                        <div className="absolute top-2 right-2">
+                          <div className="rounded-full bg-green-500 px-2 py-1 text-xs font-medium text-white">
+                            Requested
+                          </div>
+                        </div>
+                      )}
+                    </div>
                     <div className="mt-2">
                       <h3 className="text-sm font-medium text-white line-clamp-2">
                         {album.title}
@@ -166,9 +278,21 @@ const ArtistDetails = ({ artist }: ArtistDetailsProps) => {
                         </p>
                       )}
                     </div>
-                  </a>
-                </Link>
-              ))}
+                  </div>
+                );
+
+                return isLidarrAlbum ? (
+                  <Link key={album.id} href={`/album/${album.id}`}>
+                    <a className="block">
+                      {albumCard}
+                    </a>
+                  </Link>
+                ) : (
+                  <div key={album.id}>
+                    {albumCard}
+                  </div>
+                );
+              })}
             </div>
           )}
         </div>

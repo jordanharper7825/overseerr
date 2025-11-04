@@ -1279,7 +1279,36 @@ discoverRoutes.get('/music/lastfm/top-artists', async (req, res) => {
 
     const data = await lastfm.getChartTopArtists({ page, limit });
 
-    const mappedResults = data.artists.artist.map((artist) =>
+    // Fetch individual artist info for the first 20 to get real images
+    const artistsToEnhance = data.artists.artist.slice(0, 20);
+    const enhancedArtistsPromises = artistsToEnhance.map(async (artist) => {
+      try {
+        const artistInfo = await lastfm.getArtistInfo(
+          artist.name,
+          artist.mbid || undefined
+        );
+        // Return artist with enhanced image
+        return {
+          ...artist,
+          image: artistInfo.artist.image || artist.image,
+        };
+      } catch (e) {
+        logger.debug('Could not fetch enhanced artist info', {
+          label: 'API',
+          artistName: artist.name,
+        });
+        // Return original artist if fetch fails
+        return artist;
+      }
+    });
+
+    const enhancedArtists = await Promise.all(enhancedArtistsPromises);
+
+    // Map enhanced artists first, then remaining artists with placeholder images
+    const remainingArtists = data.artists.artist.slice(20);
+    const allArtists = [...enhancedArtists, ...remainingArtists];
+
+    const mappedResults = allArtists.map((artist) =>
       mapLastfmArtistResult(artist)
     );
 
@@ -1322,7 +1351,37 @@ discoverRoutes.get('/music/lastfm/top-albums', async (req, res) => {
 
     const data = await lastfm.getTopAlbums({ page, limit });
 
-    const mappedResults = data.albums.album.map((album) =>
+    // Fetch individual artist info for the first 20 albums to get real artist images
+    const albumsToEnhance = data.albums.album.slice(0, 20);
+    const enhancedAlbumsPromises = albumsToEnhance.map(async (album) => {
+      try {
+        const artistInfo = await lastfm.getArtistInfo(
+          album.artist.name,
+          album.artist.mbid || undefined
+        );
+        // Return album with enhanced artist image merged into album image
+        // (Last.fm often uses artist image for album covers in charts)
+        return {
+          ...album,
+          image: album.image?.[0]?.['#text'] ? album.image : artistInfo.artist.image || album.image,
+        };
+      } catch (e) {
+        logger.debug('Could not fetch enhanced album/artist info', {
+          label: 'API',
+          albumName: album.name,
+        });
+        // Return original album if fetch fails
+        return album;
+      }
+    });
+
+    const enhancedAlbums = await Promise.all(enhancedAlbumsPromises);
+
+    // Map enhanced albums first, then remaining albums with placeholder images
+    const remainingAlbums = data.albums.album.slice(20);
+    const allAlbums = [...enhancedAlbums, ...remainingAlbums];
+
+    const mappedResults = allAlbums.map((album) =>
       mapLastfmAlbumResult(album)
     );
 
