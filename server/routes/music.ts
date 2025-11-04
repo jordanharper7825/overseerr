@@ -54,10 +54,10 @@ musicRoutes.get('/search/:artistName', async (req, res, next) => {
 
     // If we have an MBID from Last.fm, use it directly
     if (mbid) {
-      const artistData = await musicbrainz.getArtist(mbid);
+      const artist = await musicbrainz.getArtist(mbid);
       return res
         .status(200)
-        .json(mapMusicBrainzArtistResult(artistData.artist, posterPath));
+        .json(mapMusicBrainzArtistResult(artist, posterPath));
     }
 
     // Otherwise, search MusicBrainz by name
@@ -71,21 +71,22 @@ musicRoutes.get('/search/:artistName', async (req, res, next) => {
     }
 
     // Use the first search result
-    const artist = searchResults.artists[0];
-    const artistData = await musicbrainz.getArtist(artist.id);
+    const searchArtist = searchResults.artists[0];
+    const artist = await musicbrainz.getArtist(searchArtist.id);
 
     return res
       .status(200)
-      .json(mapMusicBrainzArtistResult(artistData.artist, posterPath));
+      .json(mapMusicBrainzArtistResult(artist, posterPath));
   } catch (e) {
     logger.error('Something went wrong searching for artist', {
       label: 'API',
       errorMessage: e instanceof Error ? e.message : String(e),
+      errorStack: e instanceof Error ? e.stack : undefined,
       artistName,
     });
     return next({
       status: 500,
-      message: 'Unable to find artist.',
+      message: `Unable to find artist: ${e instanceof Error ? e.message : String(e)}`,
     });
   }
 });
@@ -106,8 +107,7 @@ musicRoutes.get('/mbid/:mbid', async (req, res, next) => {
     const settings = getSettings();
 
     // Fetch artist details from MusicBrainz
-    const artistData = await musicbrainz.getArtist(mbid);
-    const artist = artistData.artist;
+    const artist = await musicbrainz.getArtist(mbid);
 
     // Try to get artist image from Last.fm if API key is configured
     let posterPath: string | undefined;
@@ -136,11 +136,12 @@ musicRoutes.get('/mbid/:mbid', async (req, res, next) => {
     logger.error('Something went wrong retrieving artist from MusicBrainz', {
       label: 'API',
       errorMessage: e instanceof Error ? e.message : String(e),
+      errorStack: e instanceof Error ? e.stack : undefined,
       mbid,
     });
     return next({
       status: 500,
-      message: 'Unable to retrieve artist from MusicBrainz.',
+      message: `Unable to retrieve artist from MusicBrainz: ${e instanceof Error ? e.message : String(e)}`,
     });
   }
 });
@@ -160,8 +161,7 @@ musicRoutes.get('/mbid/:mbid/albums', async (req, res, next) => {
     const musicbrainz = new MusicBrainzAPI();
 
     // Fetch artist details first to get the artist name
-    const artistData = await musicbrainz.getArtist(mbid);
-    const artist = artistData.artist;
+    const artist = await musicbrainz.getArtist(mbid);
 
     // Fetch release groups (albums, singles, etc.)
     const releaseGroupsData = await musicbrainz.getArtistReleaseGroups(mbid, {

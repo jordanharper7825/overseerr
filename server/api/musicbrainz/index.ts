@@ -1,7 +1,7 @@
 import ExternalAPI from '@server/api/externalapi';
 import cacheManager from '@server/lib/cache';
 import type {
-  MusicBrainzArtistResponse,
+  MusicBrainzArtist,
   MusicBrainzArtistSearchResponse,
   MusicBrainzReleaseGroupsResponse,
 } from './interfaces';
@@ -29,8 +29,8 @@ class MusicBrainzAPI extends ExternalAPI {
   /**
    * Get artist details by MBID
    */
-  public async getArtist(mbid: string): Promise<MusicBrainzArtistResponse> {
-    return this.get<MusicBrainzArtistResponse>(
+  public async getArtist(mbid: string): Promise<MusicBrainzArtist> {
+    return this.get<MusicBrainzArtist>(
       `/artist/${mbid}`,
       {
         params: {
