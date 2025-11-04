@@ -5211,6 +5211,130 @@ paths:
                         albumCount:
                           type: number
                           example: 10
+  /discover/music/lastfm/top-artists:
+    get:
+      summary: Get Last.fm top artists
+      description: Returns a list of globally popular artists from Last.fm.
+      tags:
+        - search
+      parameters:
+        - in: query
+          name: page
+          schema:
+            type: number
+            example: 1
+            default: 1
+      responses:
+        '200':
+          description: Results
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  page:
+                    type: number
+                  totalPages:
+                    type: number
+                  totalResults:
+                    type: number
+                  results:
+                    type: array
+                    items:
+                      type: object
+  /discover/music/lastfm/top-albums:
+    get:
+      summary: Get Last.fm top albums
+      description: Returns a list of globally popular albums from Last.fm.
+      tags:
+        - search
+      parameters:
+        - in: query
+          name: page
+          schema:
+            type: number
+            example: 1
+            default: 1
+      responses:
+        '200':
+          description: Results
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  page:
+                    type: number
+                  totalPages:
+                    type: number
+                  totalResults:
+                    type: number
+                  results:
+                    type: array
+                    items:
+                      type: object
+  /discover/music/lastfm/top-tracks:
+    get:
+      summary: Get Last.fm top tracks
+      description: Returns a list of globally popular tracks from Last.fm.
+      tags:
+        - search
+      parameters:
+        - in: query
+          name: page
+          schema:
+            type: number
+            example: 1
+            default: 1
+      responses:
+        '200':
+          description: Results
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  page:
+                    type: number
+                  totalPages:
+                    type: number
+                  totalResults:
+                    type: number
+                  results:
+                    type: array
+                    items:
+                      type: object
+  /discover/music/lastfm/trending-artists:
+    get:
+      summary: Get Last.fm trending artists
+      description: Returns a list of trending artists from Last.fm.
+      tags:
+        - search
+      parameters:
+        - in: query
+          name: page
+          schema:
+            type: number
+            example: 1
+            default: 1
+      responses:
+        '200':
+          description: Results
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  page:
+                    type: number
+                  totalPages:
+                    type: number
+                  totalResults:
+                    type: number
+                  results:
+                    type: array
+                    items:
+                      type: object
   /discover/keyword/{keywordId}/movies:
     get:
       summary: Get movies from keyword
