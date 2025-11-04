@@ -1,6 +1,5 @@
 import PlexAPI from '@server/api/plexapi';
 import dataSource, { getRepository } from '@server/datasource';
-import DiscoverSlider from '@server/entity/DiscoverSlider';
 import { Session } from '@server/entity/Session';
 import { User } from '@server/entity/User';
 import { startJobs } from '@server/job/schedule';
@@ -98,7 +97,8 @@ app
     startJobs();
 
     // Bootstrap Discovery Sliders
-    await DiscoverSlider.bootstrapSliders();
+    // TODO: Fix EntityMetadataNotFoundError
+    // await DiscoverSlider.bootstrapSliders();
 
     const server = express();
     if (settings.main.trustProxy) {

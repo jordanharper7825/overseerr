@@ -324,6 +324,13 @@ components:
         externalUrl:
           type: string
           nullable: true
+    LastfmSettings:
+      type: object
+      properties:
+        apiKey:
+          type: string
+          nullable: true
+          example: 'your_lastfm_api_key'
     RadarrSettings:
       type: object
       properties:
@@ -2209,6 +2216,37 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/TautulliSettings'
+  /settings/lastfm:
+    get:
+      summary: Get Last.fm settings
+      description: Retrieves current Last.fm settings.
+      tags:
+        - settings
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LastfmSettings'
+    post:
+      summary: Update Last.fm settings
+      description: Updates Last.fm settings with the provided values.
+      tags:
+        - settings
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LastfmSettings'
+      responses:
+        '200':
+          description: 'Values were successfully updated'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LastfmSettings'
   /settings/radarr:
     get:
       summary: Get Radarr settings
