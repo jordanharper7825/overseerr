@@ -74,9 +74,7 @@ musicRoutes.get('/search/:artistName', async (req, res, next) => {
     const searchArtist = searchResults.artists[0];
     const artist = await musicbrainz.getArtist(searchArtist.id);
 
-    return res
-      .status(200)
-      .json(mapMusicBrainzArtistResult(artist, posterPath));
+    return res.status(200).json(mapMusicBrainzArtistResult(artist, posterPath));
   } catch (e) {
     logger.error('Something went wrong searching for artist', {
       label: 'API',
@@ -86,7 +84,9 @@ musicRoutes.get('/search/:artistName', async (req, res, next) => {
     });
     return next({
       status: 500,
-      message: `Unable to find artist: ${e instanceof Error ? e.message : String(e)}`,
+      message: `Unable to find artist: ${
+        e instanceof Error ? e.message : String(e)
+      }`,
     });
   }
 });
@@ -129,9 +129,7 @@ musicRoutes.get('/mbid/:mbid', async (req, res, next) => {
       }
     }
 
-    return res
-      .status(200)
-      .json(mapMusicBrainzArtistResult(artist, posterPath));
+    return res.status(200).json(mapMusicBrainzArtistResult(artist, posterPath));
   } catch (e) {
     logger.error('Something went wrong retrieving artist from MusicBrainz', {
       label: 'API',
@@ -141,7 +139,9 @@ musicRoutes.get('/mbid/:mbid', async (req, res, next) => {
     });
     return next({
       status: 500,
-      message: `Unable to retrieve artist from MusicBrainz: ${e instanceof Error ? e.message : String(e)}`,
+      message: `Unable to retrieve artist from MusicBrainz: ${
+        e instanceof Error ? e.message : String(e)
+      }`,
     });
   }
 });
@@ -193,14 +193,11 @@ musicRoutes.get('/mbid/:mbid/albums', async (req, res, next) => {
 
     return res.status(200).json(mappedAlbums);
   } catch (e) {
-    logger.error(
-      'Something went wrong retrieving albums from MusicBrainz',
-      {
-        label: 'API',
-        errorMessage: e instanceof Error ? e.message : String(e),
-        mbid,
-      }
-    );
+    logger.error('Something went wrong retrieving albums from MusicBrainz', {
+      label: 'API',
+      errorMessage: e instanceof Error ? e.message : String(e),
+      mbid,
+    });
     return next({
       status: 500,
       message: 'Unable to retrieve albums from MusicBrainz.',
@@ -424,7 +421,12 @@ musicRoutes.post('/request', async (req, res, next) => {
       apiKey: lidarrSettings.apiKey,
     });
 
-    const { foreignArtistId, artistName, monitored = true, searchForMissingAlbums = false } = req.body;
+    const {
+      foreignArtistId,
+      artistName,
+      monitored = true,
+      searchForMissingAlbums = false,
+    } = req.body;
 
     if (!foreignArtistId || !artistName) {
       return next({
@@ -451,12 +453,14 @@ musicRoutes.post('/request', async (req, res, next) => {
     });
     return next({
       status: 500,
-      message: `Unable to add artist to Lidarr: ${e instanceof Error ? e.message : String(e)}`,
+      message: `Unable to add artist to Lidarr: ${
+        e instanceof Error ? e.message : String(e)
+      }`,
     });
   }
 });
 
-// Request album - adds album to Lidarr
+// Request album - adds album to Lidarr (and artist if needed)
 musicRoutes.post('/album/request', async (req, res, next) => {
   const settings = getSettings();
 
@@ -476,22 +480,79 @@ musicRoutes.post('/album/request', async (req, res, next) => {
       apiKey: lidarrSettings.apiKey,
     });
 
-    const { foreignAlbumId, title, artistId, monitored = true, searchForNewAlbum = false } = req.body;
+    const {
+      foreignAlbumId,
+      title,
+      foreignArtistId,
+      artistName,
+      monitored = true,
+      searchForNewAlbum = false,
+    } = req.body;
 
-    if (!foreignAlbumId || !title || !artistId) {
+    if (!foreignAlbumId || !title || !foreignArtistId || !artistName) {
       return next({
         status: 400,
-        message: 'foreignAlbumId, title, and artistId are required.',
+        message:
+          'foreignAlbumId, title, foreignArtistId, and artistName are required.',
       });
     }
 
+    // Check if artist exists in Lidarr by foreignArtistId (MBID)
+    let lidarrArtistId: number;
+
+    // First check if artist already exists in Lidarr
+    const artists = await lidarrApi.getArtists();
+    const existingArtist = artists.find(
+      (a) => a.foreignArtistId === foreignArtistId
+    );
+
+    if (existingArtist) {
+      lidarrArtistId = existingArtist.id;
+      logger.info('Artist already exists in Lidarr', {
+        label: 'API',
+        artistName,
+        artistId: lidarrArtistId,
+      });
+    } else {
+      // Artist doesn't exist, add it first
+      logger.info('Artist not in Lidarr, adding first', {
+        label: 'API',
+        artistName,
+        foreignArtistId,
+      });
+
+      const newArtist = await lidarrApi.addArtist({
+        artistName,
+        foreignArtistId,
+        qualityProfileId: lidarrSettings.activeProfileId,
+        metadataProfileId: lidarrSettings.activeMetadataProfileId,
+        rootFolderPath: lidarrSettings.activeDirectory,
+        monitored: true,
+        searchForMissingAlbums: false,
+      });
+      lidarrArtistId = newArtist.id;
+
+      logger.info('Artist added to Lidarr', {
+        label: 'API',
+        artistName,
+        artistId: lidarrArtistId,
+      });
+    }
+
+    // Now add the album using the Lidarr artist ID
     const album = await lidarrApi.addAlbum({
       title,
       foreignAlbumId,
-      artistId,
+      artistId: lidarrArtistId,
       qualityProfileId: lidarrSettings.activeProfileId,
       monitored,
       searchForNewAlbum,
+    });
+
+    logger.info('Album added to Lidarr', {
+      label: 'API',
+      albumTitle: title,
+      albumId: album.id,
     });
 
     return res.status(201).json(mapAlbumResult(album, undefined, apiUrl));
@@ -502,7 +563,9 @@ musicRoutes.post('/album/request', async (req, res, next) => {
     });
     return next({
       status: 500,
-      message: `Unable to add album to Lidarr: ${e instanceof Error ? e.message : String(e)}`,
+      message: `Unable to add album to Lidarr: ${
+        e instanceof Error ? e.message : String(e)
+      }`,
     });
   }
 });

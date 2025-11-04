@@ -6683,7 +6683,7 @@ paths:
   /music/album/request:
     post:
       summary: Request album to be added to Lidarr
-      description: Adds an album to Lidarr for monitoring and downloading.
+      description: Adds an album to Lidarr for monitoring and downloading. If the artist is not already in Lidarr, it will be added automatically.
       tags:
         - music
       requestBody:
@@ -6695,7 +6695,8 @@ paths:
               required:
                 - foreignAlbumId
                 - title
-                - artistId
+                - foreignArtistId
+                - artistName
               properties:
                 foreignAlbumId:
                   type: string
@@ -6705,10 +6706,14 @@ paths:
                   type: string
                   description: Album title
                   example: OK Computer
-                artistId:
-                  type: number
-                  description: Lidarr artist ID
-                  example: 1
+                foreignArtistId:
+                  type: string
+                  description: MusicBrainz artist ID (MBID)
+                  example: a74b1b7f-71a5-4011-9441-d0b5e4122711
+                artistName:
+                  type: string
+                  description: Artist name
+                  example: Radiohead
                 monitored:
                   type: boolean
                   description: Whether to monitor the album

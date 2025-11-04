@@ -4,12 +4,12 @@ import LoadingSpinner from '@app/components/Common/LoadingSpinner';
 import PageTitle from '@app/components/Common/PageTitle';
 import Tag from '@app/components/Common/Tag';
 import Error from '@app/pages/_error';
-import type { ArtistResult, AlbumResult } from '@server/models/Music';
 import { ArrowDownTrayIcon } from '@heroicons/react/24/outline';
+import type { AlbumResult, ArtistResult } from '@server/models/Music';
 import axios from 'axios';
 import Link from 'next/link';
-import { defineMessages, useIntl } from 'react-intl';
 import { useState } from 'react';
+import { defineMessages, useIntl } from 'react-intl';
 import useSWR from 'swr';
 
 const messages = defineMessages({
@@ -22,6 +22,7 @@ const messages = defineMessages({
   request: 'Request Artist',
   requestsuccess: 'Artist requested successfully!',
   requesterror: 'Failed to request artist.',
+  requestalbums: 'Hover over albums to request them individually',
 });
 
 interface ArtistDetailsProps {
@@ -31,12 +32,22 @@ interface ArtistDetailsProps {
 const ArtistDetails = ({ artist }: ArtistDetailsProps) => {
   const intl = useIntl();
   const [isRequesting, setIsRequesting] = useState(false);
-  const [requestStatus, setRequestStatus] = useState<'idle' | 'success' | 'error'>('idle');
-  const [requestingAlbumId, setRequestingAlbumId] = useState<number | null>(null);
-  const [requestedAlbums, setRequestedAlbums] = useState<Set<number>>(new Set());
+  const [requestStatus, setRequestStatus] = useState<
+    'idle' | 'success' | 'error'
+  >('idle');
+  const [requestingAlbumId, setRequestingAlbumId] = useState<number | null>(
+    null
+  );
+  const [requestedAlbums, setRequestedAlbums] = useState<Set<number>>(
+    new Set()
+  );
 
   // Check if foreignId is a UUID (MBID) or if we should use the numeric ID
-  const isMBID = artist?.foreignId && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(artist.foreignId);
+  const isMBID =
+    artist?.foreignId &&
+    /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(
+      artist.foreignId
+    );
 
   const albumsEndpoint = artist
     ? isMBID
@@ -44,9 +55,8 @@ const ArtistDetails = ({ artist }: ArtistDetailsProps) => {
       : `/api/v1/music/${artist.id}/albums`
     : null;
 
-  const { data: albumData, error: albumError } = useSWR<AlbumResult[]>(
-    albumsEndpoint
-  );
+  const { data: albumData, error: albumError } =
+    useSWR<AlbumResult[]>(albumsEndpoint);
 
   const handleRequestArtist = async () => {
     if (!artist || !isMBID) return;
@@ -83,11 +93,12 @@ const ArtistDetails = ({ artist }: ArtistDetailsProps) => {
       await axios.post('/api/v1/music/album/request', {
         foreignAlbumId: album.foreignId,
         title: album.title,
-        artistId: artist.id,
+        foreignArtistId: artist.foreignId,
+        artistName: artist.name,
         monitored: true,
         searchForNewAlbum: false,
       });
-      setRequestedAlbums(prev => {
+      setRequestedAlbums((prev) => {
         const newSet = new Set(prev);
         newSet.add(album.id);
         return newSet;
@@ -158,9 +169,7 @@ const ArtistDetails = ({ artist }: ArtistDetailsProps) => {
             </div>
           )}
           <div className="mt-2 flex flex-wrap items-center justify-center gap-2 md:justify-start">
-            {artist.artistType && (
-              <Tag>{artist.artistType}</Tag>
-            )}
+            {artist.artistType && <Tag>{artist.artistType}</Tag>}
             {artist.albumCount !== undefined && (
               <Tag>
                 {intl.formatMessage(messages.albumcount, {
@@ -172,7 +181,13 @@ const ArtistDetails = ({ artist }: ArtistDetailsProps) => {
           {showRequestButton && (
             <div className="mt-4 flex justify-center md:justify-start">
               <Button
-                buttonType={requestStatus === 'success' ? 'success' : requestStatus === 'error' ? 'danger' : 'primary'}
+                buttonType={
+                  requestStatus === 'success'
+                    ? 'success'
+                    : requestStatus === 'error'
+                    ? 'danger'
+                    : 'primary'
+                }
                 onClick={handleRequestArtist}
                 disabled={isRequesting || requestStatus === 'success'}
                 className="w-full md:w-auto"
@@ -215,6 +230,11 @@ const ArtistDetails = ({ artist }: ArtistDetailsProps) => {
           <h2 className="text-xl font-bold text-white">
             {intl.formatMessage(messages.albums)}
           </h2>
+          {isMBID && (
+            <p className="mt-2 text-sm text-gray-400">
+              {intl.formatMessage(messages.requestalbums)}
+            </p>
+          )}
           {!albumData && <LoadingSpinner />}
           {albumData && albumData.length === 0 && (
             <div className="mt-4 text-sm text-gray-400">
@@ -225,13 +245,17 @@ const ArtistDetails = ({ artist }: ArtistDetailsProps) => {
             <div className="mt-4 grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6">
               {albumData.map((album) => {
                 // Only Lidarr albums (from non-MBID artists) are clickable
-                // MusicBrainz albums need to be requested first
+                // MusicBrainz albums show request button on hover
                 const isLidarrAlbum = !isMBID;
                 const isRequested = requestedAlbums.has(album.id);
                 const isRequesting = requestingAlbumId === album.id;
 
                 const albumCard = (
-                  <div className={`rounded-lg bg-gray-800 p-2 transition ${isLidarrAlbum ? 'cursor-pointer hover:bg-gray-700' : ''}`}>
+                  <div
+                    className={`rounded-lg bg-gray-800 p-2 transition ${
+                      isLidarrAlbum ? 'cursor-pointer hover:bg-gray-700' : ''
+                    }`}
+                  >
                     <div className="relative">
                       {album.posterPath && (
                         <CachedImage
@@ -244,11 +268,13 @@ const ArtistDetails = ({ artist }: ArtistDetailsProps) => {
                       )}
                       {!album.posterPath && (
                         <div className="flex h-48 w-full items-center justify-center rounded bg-gray-700">
-                          <span className="text-xs text-gray-400">No Image</span>
+                          <span className="text-xs text-gray-400">
+                            No Image
+                          </span>
                         </div>
                       )}
                       {!isLidarrAlbum && !isRequested && (
-                        <div className="absolute inset-0 flex items-center justify-center bg-black bg-opacity-60 opacity-0 transition-opacity hover:opacity-100">
+                        <div className="absolute inset-0 flex items-center justify-center rounded bg-black bg-opacity-60 opacity-0 transition-opacity hover:opacity-100">
                           <Button
                             buttonType="primary"
                             buttonSize="sm"
@@ -273,12 +299,13 @@ const ArtistDetails = ({ artist }: ArtistDetailsProps) => {
                       )}
                     </div>
                     <div className="mt-2">
-                      <h3 className="text-sm font-medium text-white line-clamp-2">
+                      <h3 className="line-clamp-2 text-sm font-medium text-white">
                         {album.title}
                       </h3>
                       {album.trackCount && (
                         <p className="text-xs text-gray-400">
-                          {album.trackCount} {album.trackCount === 1 ? 'track' : 'tracks'}
+                          {album.trackCount}{' '}
+                          {album.trackCount === 1 ? 'track' : 'tracks'}
                         </p>
                       )}
                     </div>
@@ -287,14 +314,10 @@ const ArtistDetails = ({ artist }: ArtistDetailsProps) => {
 
                 return isLidarrAlbum ? (
                   <Link key={album.id} href={`/album/${album.id}`}>
-                    <a className="block">
-                      {albumCard}
-                    </a>
+                    <a className="block">{albumCard}</a>
                   </Link>
                 ) : (
-                  <div key={album.id}>
-                    {albumCard}
-                  </div>
+                  <div key={album.id}>{albumCard}</div>
                 );
               })}
             </div>
