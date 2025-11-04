@@ -404,4 +404,107 @@ musicRoutes.get('/:artistId', async (req, res, next) => {
   }
 });
 
+// Request artist - adds artist to Lidarr
+musicRoutes.post('/request', async (req, res, next) => {
+  const settings = getSettings();
+
+  try {
+    const lidarrSettings = settings.lidarr.find((lidarr) => lidarr.isDefault);
+
+    if (!lidarrSettings) {
+      return next({
+        status: 404,
+        message: 'No Lidarr instance configured.',
+      });
+    }
+
+    const apiUrl = LidarrAPI.buildUrl(lidarrSettings, '/api/v1');
+    const lidarrApi = new LidarrAPI({
+      url: apiUrl,
+      apiKey: lidarrSettings.apiKey,
+    });
+
+    const { foreignArtistId, artistName, monitored = true, searchForMissingAlbums = false } = req.body;
+
+    if (!foreignArtistId || !artistName) {
+      return next({
+        status: 400,
+        message: 'foreignArtistId and artistName are required.',
+      });
+    }
+
+    const artist = await lidarrApi.addArtist({
+      artistName,
+      foreignArtistId,
+      qualityProfileId: lidarrSettings.activeProfileId,
+      metadataProfileId: lidarrSettings.activeMetadataProfileId,
+      rootFolderPath: lidarrSettings.activeDirectory,
+      monitored,
+      searchForMissingAlbums,
+    });
+
+    return res.status(201).json(mapArtistResult(artist, undefined, apiUrl));
+  } catch (e) {
+    logger.error('Something went wrong adding artist to Lidarr', {
+      label: 'API',
+      errorMessage: e instanceof Error ? e.message : String(e),
+    });
+    return next({
+      status: 500,
+      message: `Unable to add artist to Lidarr: ${e instanceof Error ? e.message : String(e)}`,
+    });
+  }
+});
+
+// Request album - adds album to Lidarr
+musicRoutes.post('/album/request', async (req, res, next) => {
+  const settings = getSettings();
+
+  try {
+    const lidarrSettings = settings.lidarr.find((lidarr) => lidarr.isDefault);
+
+    if (!lidarrSettings) {
+      return next({
+        status: 404,
+        message: 'No Lidarr instance configured.',
+      });
+    }
+
+    const apiUrl = LidarrAPI.buildUrl(lidarrSettings, '/api/v1');
+    const lidarrApi = new LidarrAPI({
+      url: apiUrl,
+      apiKey: lidarrSettings.apiKey,
+    });
+
+    const { foreignAlbumId, title, artistId, monitored = true, searchForNewAlbum = false } = req.body;
+
+    if (!foreignAlbumId || !title || !artistId) {
+      return next({
+        status: 400,
+        message: 'foreignAlbumId, title, and artistId are required.',
+      });
+    }
+
+    const album = await lidarrApi.addAlbum({
+      title,
+      foreignAlbumId,
+      artistId,
+      qualityProfileId: lidarrSettings.activeProfileId,
+      monitored,
+      searchForNewAlbum,
+    });
+
+    return res.status(201).json(mapAlbumResult(album, undefined, apiUrl));
+  } catch (e) {
+    logger.error('Something went wrong adding album to Lidarr', {
+      label: 'API',
+      errorMessage: e instanceof Error ? e.message : String(e),
+    });
+    return next({
+      status: 500,
+      message: `Unable to add album to Lidarr: ${e instanceof Error ? e.message : String(e)}`,
+    });
+  }
+});
+
 export default musicRoutes;
