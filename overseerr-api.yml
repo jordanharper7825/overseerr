@@ -5211,43 +5211,6 @@ paths:
                         albumCount:
                           type: number
                           example: 10
-  /discover/music:
-    get:
-      summary: Get all Lidarr artists
-      description: Returns a paginated list of all artists from Lidarr.
-      tags:
-        - search
-      parameters:
-        - in: query
-          name: page
-          schema:
-            type: number
-            example: 1
-            default: 1
-        - in: query
-          name: sortBy
-          schema:
-            type: string
-            enum: [name, added]
-            default: added
-      responses:
-        '200':
-          description: Results
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  page:
-                    type: number
-                  totalPages:
-                    type: number
-                  totalResults:
-                    type: number
-                  results:
-                    type: array
-                    items:
-                      type: object
   /discover/music/popular-artists:
     get:
       summary: Get popular Lidarr artists
