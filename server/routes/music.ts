@@ -289,6 +289,15 @@ musicRoutes.get('/:artistId/albums', async (req, res, next) => {
   const settings = getSettings();
 
   try {
+    // Only accept numeric IDs for this route (Lidarr artists)
+    const artistId = Number(req.params.artistId);
+    if (isNaN(artistId)) {
+      return next({
+        status: 400,
+        message: 'Invalid artist ID format.',
+      });
+    }
+
     const lidarrSettings = settings.lidarr.find((lidarr) => lidarr.isDefault);
 
     if (!lidarrSettings) {
@@ -304,9 +313,7 @@ musicRoutes.get('/:artistId/albums', async (req, res, next) => {
       apiKey: lidarrSettings.apiKey,
     });
 
-    const albums = await lidarrApi.getAlbumsByArtist(
-      Number(req.params.artistId)
-    );
+    const albums = await lidarrApi.getAlbumsByArtist(artistId);
 
     const mappedAlbums = albums.map((album) =>
       mapAlbumResult(album, undefined, apiUrl)
@@ -330,6 +337,15 @@ musicRoutes.get('/:artistId', async (req, res, next) => {
   const settings = getSettings();
 
   try {
+    // Only accept numeric IDs for this route (Lidarr artists)
+    const artistId = Number(req.params.artistId);
+    if (isNaN(artistId)) {
+      return next({
+        status: 400,
+        message: 'Invalid artist ID format.',
+      });
+    }
+
     const lidarrSettings = settings.lidarr.find((lidarr) => lidarr.isDefault);
 
     if (!lidarrSettings) {
@@ -346,7 +362,7 @@ musicRoutes.get('/:artistId', async (req, res, next) => {
     });
 
     const artist = await lidarrApi.getArtist({
-      id: Number(req.params.artistId),
+      id: artistId,
     });
 
     if (!artist) {
