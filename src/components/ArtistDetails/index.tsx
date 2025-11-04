@@ -312,12 +312,16 @@ const ArtistDetails = ({ artist }: ArtistDetailsProps) => {
                   </div>
                 );
 
-                return isLidarrAlbum ? (
-                  <Link key={album.id} href={`/album/${album.id}`}>
+                // Both Lidarr and MusicBrainz albums are now clickable
+                // Use foreignId (MBID) for MusicBrainz albums, numeric ID for Lidarr albums
+                const linkHref = isLidarrAlbum
+                  ? `/album/${album.id}`
+                  : `/album/${album.foreignId}`;
+
+                return (
+                  <Link key={album.id} href={linkHref}>
                     <a className="block">{albumCard}</a>
                   </Link>
-                ) : (
-                  <div key={album.id}>{albumCard}</div>
                 );
               })}
             </div>

@@ -5,6 +5,7 @@ import Media from '@server/entity/Media';
 import { findSearchProvider } from '@server/lib/search';
 import { getSettings } from '@server/lib/settings';
 import logger from '@server/logger';
+import type { MusicResults } from '@server/models/Music';
 import { mapAlbumResult, mapArtistResult } from '@server/models/Music';
 import { mapSearchResults } from '@server/models/Search';
 import { Router } from 'express';
@@ -40,11 +41,47 @@ searchRoutes.get('/', async (req, res, next) => {
       results.results.map((result) => result.id)
     );
 
+    let musicResults: MusicResults[] = [];
+
+    // Also search for music (artists and albums) via Lidarr
+    const settings = getSettings();
+    const lidarrSettings = settings.lidarr.find((lidarr) => lidarr.isDefault);
+
+    if (lidarrSettings && queryString) {
+      try {
+        const apiUrl = LidarrAPI.buildUrl(lidarrSettings, '/api/v1');
+        const lidarrApi = new LidarrAPI({
+          url: apiUrl,
+          apiKey: lidarrSettings.apiKey,
+        });
+
+        const [artists, albums] = await Promise.all([
+          lidarrApi.searchArtist(queryString),
+          lidarrApi.searchAlbum(queryString),
+        ]);
+
+        const mappedArtists = artists
+          .slice(0, 5)
+          .map((artist) => mapArtistResult(artist, undefined, apiUrl));
+
+        const mappedAlbums = albums
+          .slice(0, 5)
+          .map((album) => mapAlbumResult(album, undefined, apiUrl));
+
+        musicResults = [...mappedArtists, ...mappedAlbums];
+      } catch (e) {
+        logger.debug('Error searching music in main search', {
+          label: 'API',
+          errorMessage: e instanceof Error ? e.message : String(e),
+        });
+      }
+    }
+
     return res.status(200).json({
       page: results.page,
       totalPages: results.total_pages,
-      totalResults: results.total_results,
-      results: mapSearchResults(results.results, media),
+      totalResults: results.total_results + musicResults.length,
+      results: [...mapSearchResults(results.results, media), ...musicResults],
     });
   } catch (e) {
     logger.debug('Something went wrong retrieving search results', {
@@ -138,7 +175,9 @@ searchRoutes.get('/music', async (req, res, next) => {
       mapArtistResult(artist, undefined, apiUrl)
     );
 
-    const mappedAlbums = albums.map((album) => mapAlbumResult(album, undefined, apiUrl));
+    const mappedAlbums = albums.map((album) =>
+      mapAlbumResult(album, undefined, apiUrl)
+    );
 
     const results = [...mappedArtists, ...mappedAlbums];
 

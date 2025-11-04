@@ -15,10 +15,23 @@ export const getServerSideProps: GetServerSideProps<AlbumPageProps> = async (
   ctx
 ) => {
   try {
+    const albumId = ctx.query.albumId as string;
+
+    // Determine if this is an MBID (UUID format) or a numeric Lidarr ID
+    const isMBID =
+      /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(
+        albumId
+      );
+
+    // Build endpoint based on ID type
+    const endpoint = isMBID
+      ? `/api/v1/music/album/mbid/${albumId}`
+      : `/api/v1/music/album/${albumId}`;
+
     const response = await axios.get<AlbumResult>(
       `http://${process.env.HOST || 'localhost'}:${
         process.env.PORT || 5055
-      }/api/v1/music/album/${ctx.query.albumId}`,
+      }${endpoint}`,
       {
         headers: ctx.req?.headers?.cookie
           ? { cookie: ctx.req.headers.cookie }

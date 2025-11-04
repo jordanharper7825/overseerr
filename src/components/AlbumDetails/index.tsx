@@ -1,9 +1,11 @@
+import Button from '@app/components/Common/Button';
 import CachedImage from '@app/components/Common/CachedImage';
 import LoadingSpinner from '@app/components/Common/LoadingSpinner';
 import PageTitle from '@app/components/Common/PageTitle';
 import Tag from '@app/components/Common/Tag';
-import { CheckCircleIcon } from '@heroicons/react/24/solid';
+import { ArrowDownTrayIcon, CheckCircleIcon } from '@heroicons/react/24/solid';
 import type { AlbumResult } from '@server/models/Music';
+import axios from 'axios';
 import Link from 'next/link';
 import { useEffect, useState } from 'react';
 import { defineMessages, useIntl } from 'react-intl';
@@ -18,6 +20,9 @@ const messages = defineMessages({
   disambiguation: 'Disambiguation',
   tracklist: 'Track List',
   trackavailable: 'Track is downloaded',
+  requestalbum: 'Request Album',
+  requestsuccess: 'Album requested successfully!',
+  requesterror: 'Failed to request album.',
 });
 
 interface AlbumDetailsProps {
@@ -45,9 +50,21 @@ const AlbumDetails = ({ album }: AlbumDetailsProps) => {
   const [groupedTracks, setGroupedTracks] = useState<Map<number, Track[]>>(
     new Map()
   );
+  const [isRequesting, setIsRequesting] = useState(false);
+  const [requestStatus, setRequestStatus] = useState<
+    'idle' | 'success' | 'error'
+  >('idle');
 
+  // Check if this is a MusicBrainz album (has foreignId that's an MBID)
+  const isMBIDAlbum =
+    album?.foreignId &&
+    /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(
+      album.foreignId
+    );
+
+  // Only fetch tracks for Lidarr albums (numeric IDs)
   const { data: tracks } = useSWR<Track[]>(
-    album?.id ? `/api/v1/music/album/${album.id}/tracks` : null
+    album?.id && !isMBIDAlbum ? `/api/v1/music/album/${album.id}/tracks` : null
   );
 
   useEffect(() => {
@@ -66,6 +83,32 @@ const AlbumDetails = ({ album }: AlbumDetailsProps) => {
       setGroupedTracks(grouped);
     }
   }, [tracks]);
+
+  const handleRequestAlbum = async () => {
+    if (!album || !isMBIDAlbum || !album.artistForeignId) return;
+
+    setIsRequesting(true);
+    setRequestStatus('idle');
+
+    try {
+      await axios.post('/api/v1/music/album/request', {
+        foreignAlbumId: album.foreignId,
+        title: album.title,
+        foreignArtistId: album.artistForeignId, // Artist's MBID
+        artistName: album.artistName,
+        monitored: true,
+        searchForNewAlbum: false,
+      });
+      setRequestStatus('success');
+      setTimeout(() => {
+        window.location.reload();
+      }, 1500);
+    } catch (error) {
+      setRequestStatus('error');
+    } finally {
+      setIsRequesting(false);
+    }
+  };
 
   if (!album) {
     return <LoadingSpinner />;
@@ -130,6 +173,31 @@ const AlbumDetails = ({ album }: AlbumDetailsProps) => {
               </Tag>
             )}
           </div>
+          {isMBIDAlbum && (
+            <div className="mt-4 flex justify-center md:justify-start">
+              <Button
+                buttonType={
+                  requestStatus === 'success'
+                    ? 'success'
+                    : requestStatus === 'error'
+                    ? 'danger'
+                    : 'primary'
+                }
+                onClick={handleRequestAlbum}
+                disabled={isRequesting || requestStatus === 'success'}
+                className="w-full md:w-auto"
+              >
+                <ArrowDownTrayIcon />
+                <span>
+                  {requestStatus === 'success'
+                    ? intl.formatMessage(messages.requestsuccess)
+                    : requestStatus === 'error'
+                    ? intl.formatMessage(messages.requesterror)
+                    : intl.formatMessage(messages.requestalbum)}
+                </span>
+              </Button>
+            </div>
+          )}
         </div>
       </div>
 

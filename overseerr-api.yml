@@ -6269,6 +6269,61 @@ paths:
                   criticsRating:
                     type: string
                     enum: ['Rotten', 'Fresh']
+  /music/album/mbid/{mbid}:
+    get:
+      summary: Get MusicBrainz album details
+      description: Returns album details from MusicBrainz based on provided release group MBID.
+      tags:
+        - music
+      parameters:
+        - in: path
+          name: mbid
+          required: true
+          schema:
+            type: string
+            example: '0da340a0-6ad7-4fc2-a272-6f94393a7831'
+      responses:
+        '200':
+          description: Album details returned
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  id:
+                    type: number
+                    example: 123456789
+                  mediaType:
+                    type: string
+                    example: album
+                  title:
+                    type: string
+                    example: Blonde
+                  foreignId:
+                    type: string
+                    example: '0da340a0-6ad7-4fc2-a272-6f94393a7831'
+                  artistId:
+                    type: number
+                    example: 987654321
+                  artistName:
+                    type: string
+                    example: Frank Ocean
+                  artistForeignId:
+                    type: string
+                    example: 'e520459c-dff4-491d-a6e4-c97be35e0044'
+                  disambiguation:
+                    type: string
+                    example: ''
+                  albumType:
+                    type: string
+                    example: Album
+                  overview:
+                    type: string
+                    example: 'alternative r&b, pop'
+        '400':
+          description: Invalid MBID format
+        '500':
+          description: Unable to retrieve album from MusicBrainz
   /music/album/{albumId}:
     get:
       summary: Get album details

@@ -1,8 +1,4 @@
 import type {
-  LidarrAlbum,
-  LidarrArtist,
-} from '@server/api/servarr/lidarr';
-import type {
   LastfmAlbum,
   LastfmArtist,
   LastfmTrack,
@@ -11,7 +7,7 @@ import type {
   MusicBrainzArtist,
   MusicBrainzReleaseGroup,
 } from '@server/api/musicbrainz/interfaces';
-import { MediaType as MainMediaType } from '@server/constants/media';
+import type { LidarrAlbum, LidarrArtist } from '@server/api/servarr/lidarr';
 import type Media from '@server/entity/Media';
 
 export type MusicMediaType = 'artist' | 'album';
@@ -39,6 +35,7 @@ export interface AlbumResult extends MusicSearchResult {
   foreignId: string;
   artistId: number;
   artistName: string;
+  artistForeignId?: string; // Artist MBID
   disambiguation?: string;
   albumType?: string;
   duration?: number;
@@ -87,13 +84,14 @@ export const mapAlbumResult = (
   media?: Media,
   serverUrl?: string
 ): AlbumResult => {
-  const coverImage = albumResult.images?.find((img) => img.coverType === 'cover');
+  const coverImage = albumResult.images?.find(
+    (img) => img.coverType === 'cover'
+  );
 
   // Get track count from monitored release or first release
   // (albums can have multiple releases - vinyl, CD, remasters, etc.)
   const monitoredRelease =
-    albumResult.releases?.find((r) => r.monitored) ||
-    albumResult.releases?.[0];
+    albumResult.releases?.find((r) => r.monitored) || albumResult.releases?.[0];
   const trackCount = monitoredRelease?.trackCount || 0;
 
   // Convert relative image URLs to full URLs
@@ -239,10 +237,11 @@ export const mapMusicBrainzArtistResult = (
   const id = simpleHash(artist.id);
 
   // Extract bio/overview from tags if available
-  const overview = artist.tags
-    ?.slice(0, 5)
-    .map((tag) => tag.name)
-    .join(', ') || '';
+  const overview =
+    artist.tags
+      ?.slice(0, 5)
+      .map((tag) => tag.name)
+      .join(', ') || '';
 
   return {
     id,
@@ -263,7 +262,8 @@ export const mapMusicBrainzReleaseGroupResult = (
   artistId: number,
   artistName: string,
   coverArtUrl?: string,
-  media?: Media
+  media?: Media,
+  artistForeignId?: string
 ): AlbumResult => {
   // Generate numeric ID from MBID
   const id = simpleHash(releaseGroup.id);
@@ -275,10 +275,12 @@ export const mapMusicBrainzReleaseGroupResult = (
     foreignId: releaseGroup.id, // MBID
     artistId,
     artistName,
-    overview: releaseGroup.tags
-      ?.slice(0, 3)
-      .map((tag) => tag.name)
-      .join(', ') || '',
+    artistForeignId, // Artist MBID
+    overview:
+      releaseGroup.tags
+        ?.slice(0, 3)
+        .map((tag) => tag.name)
+        .join(', ') || '',
     disambiguation: releaseGroup.disambiguation,
     albumType: releaseGroup['primary-type'],
     posterPath: coverArtUrl,

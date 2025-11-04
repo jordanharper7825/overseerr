@@ -3,6 +3,7 @@ import cacheManager from '@server/lib/cache';
 import type {
   MusicBrainzArtist,
   MusicBrainzArtistSearchResponse,
+  MusicBrainzReleaseGroup,
   MusicBrainzReleaseGroupsResponse,
 } from './interfaces';
 
@@ -35,6 +36,21 @@ class MusicBrainzAPI extends ExternalAPI {
       {
         params: {
           inc: 'aliases+tags+ratings+genres',
+        },
+      },
+      86400 // Cache for 24 hours
+    );
+  }
+
+  /**
+   * Get release group (album) details by MBID
+   */
+  public async getReleaseGroup(mbid: string): Promise<MusicBrainzReleaseGroup> {
+    return this.get<MusicBrainzReleaseGroup>(
+      `/release-group/${mbid}`,
+      {
+        params: {
+          inc: 'artist-credits+tags+ratings+genres',
         },
       },
       86400 // Cache for 24 hours

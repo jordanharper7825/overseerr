@@ -205,6 +205,66 @@ musicRoutes.get('/mbid/:mbid/albums', async (req, res, next) => {
   }
 });
 
+// MusicBrainz album route (handles MBID format for release groups)
+musicRoutes.get('/album/mbid/:mbid', async (req, res, next) => {
+  const mbid = req.params.mbid;
+
+  if (!isMBID(mbid)) {
+    return next({
+      status: 400,
+      message: 'Invalid MBID format.',
+    });
+  }
+
+  try {
+    const musicbrainz = new MusicBrainzAPI();
+
+    // Fetch release group (album) details from MusicBrainz
+    const releaseGroup = await musicbrainz.getReleaseGroup(mbid);
+
+    // Get artist details to include artist name
+    const artist = await musicbrainz.getArtist(
+      releaseGroup['artist-credit'][0].artist.id
+    );
+
+    // Generate consistent IDs
+    const simpleHash = (str: string): number => {
+      let hash = 0;
+      for (let i = 0; i < str.length; i++) {
+        const char = str.charCodeAt(i);
+        hash = (hash << 5) - hash + char;
+        hash = hash & hash;
+      }
+      return Math.abs(hash);
+    };
+    const artistId = simpleHash(releaseGroup['artist-credit'][0].artist.id);
+
+    // Map to AlbumResult format
+    const mappedAlbum = mapMusicBrainzReleaseGroupResult(
+      releaseGroup,
+      artistId,
+      artist.name,
+      undefined, // No cover art from MusicBrainz directly
+      undefined, // No media info
+      releaseGroup['artist-credit'][0].artist.id // Artist MBID
+    );
+
+    return res.status(200).json(mappedAlbum);
+  } catch (e) {
+    logger.error('Something went wrong retrieving album from MusicBrainz', {
+      label: 'API',
+      errorMessage: e instanceof Error ? e.message : String(e),
+      mbid,
+    });
+    return next({
+      status: 500,
+      message: `Unable to retrieve album from MusicBrainz: ${
+        e instanceof Error ? e.message : String(e)
+      }`,
+    });
+  }
+});
+
 musicRoutes.get('/album/:albumId', async (req, res, next) => {
   const settings = getSettings();
 
