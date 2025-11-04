@@ -52,7 +52,7 @@ export const getServerSideProps: GetServerSideProps<ArtistPageProps> = async (
       },
     };
   } catch (e) {
-    console.error('Error fetching artist:', e);
+    // Artist not found
     return {
       notFound: true,
     };

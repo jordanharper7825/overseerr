@@ -67,7 +67,7 @@ const ArtistDetails = ({ artist }: ArtistDetailsProps) => {
         window.location.reload();
       }, 1500);
     } catch (error) {
-      console.error('Failed to request artist:', error);
+      // Artist request failed
       setRequestStatus('error');
     } finally {
       setIsRequesting(false);
@@ -87,9 +87,13 @@ const ArtistDetails = ({ artist }: ArtistDetailsProps) => {
         monitored: true,
         searchForNewAlbum: false,
       });
-      setRequestedAlbums(prev => new Set([...prev, album.id]));
+      setRequestedAlbums(prev => {
+        const newSet = new Set(prev);
+        newSet.add(album.id);
+        return newSet;
+      });
     } catch (error) {
-      console.error('Failed to request album:', error);
+      // Album request failed
     } finally {
       setRequestingAlbumId(null);
     }

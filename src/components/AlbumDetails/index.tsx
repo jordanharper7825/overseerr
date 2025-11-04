@@ -58,7 +58,10 @@ const AlbumDetails = ({ album }: AlbumDetailsProps) => {
         if (!grouped.has(medium)) {
           grouped.set(medium, []);
         }
-        grouped.get(medium)!.push(track);
+        const mediumTracks = grouped.get(medium);
+        if (mediumTracks) {
+          mediumTracks.push(track);
+        }
       });
       setGroupedTracks(grouped);
     }
