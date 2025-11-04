@@ -7,6 +7,10 @@ import type {
   LastfmArtist,
   LastfmTrack,
 } from '@server/api/lastfm/interfaces';
+import type {
+  MusicBrainzArtist,
+  MusicBrainzReleaseGroup,
+} from '@server/api/musicbrainz/interfaces';
 import { MediaType as MainMediaType } from '@server/constants/media';
 import type Media from '@server/entity/Media';
 
@@ -221,6 +225,62 @@ export const mapLastfmTrackResult = (
     overview: '',
     duration: track.duration ? parseInt(track.duration, 10) : undefined,
     posterPath: coverImage?.['#text'],
+    mediaInfo: media,
+  };
+};
+
+export const mapMusicBrainzArtistResult = (
+  artist: MusicBrainzArtist,
+  posterPath?: string,
+  media?: Media
+): ArtistResult => {
+  // Generate numeric ID from MBID for consistency
+  const id = simpleHash(artist.id);
+
+  // Extract bio/overview from tags if available
+  const overview = artist.tags
+    ?.slice(0, 5)
+    .map((tag) => tag.name)
+    .join(', ') || '';
+
+  return {
+    id,
+    mediaType: 'artist',
+    name: artist.name,
+    foreignId: artist.id, // MBID
+    overview,
+    disambiguation: artist.disambiguation,
+    artistType: artist.type,
+    albumCount: artist['release-groups']?.length,
+    posterPath,
+    mediaInfo: media,
+  };
+};
+
+export const mapMusicBrainzReleaseGroupResult = (
+  releaseGroup: MusicBrainzReleaseGroup,
+  artistId: number,
+  artistName: string,
+  coverArtUrl?: string,
+  media?: Media
+): AlbumResult => {
+  // Generate numeric ID from MBID
+  const id = simpleHash(releaseGroup.id);
+
+  return {
+    id,
+    mediaType: 'album',
+    title: releaseGroup.title,
+    foreignId: releaseGroup.id, // MBID
+    artistId,
+    artistName,
+    overview: releaseGroup.tags
+      ?.slice(0, 3)
+      .map((tag) => tag.name)
+      .join(', ') || '',
+    disambiguation: releaseGroup.disambiguation,
+    albumType: releaseGroup['primary-type'],
+    posterPath: coverArtUrl,
     mediaInfo: media,
   };
 };

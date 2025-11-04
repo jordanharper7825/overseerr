@@ -1,14 +1,146 @@
+import LastfmAPI from '@server/api/lastfm';
+import MusicBrainzAPI from '@server/api/musicbrainz';
 import LidarrAPI from '@server/api/servarr/lidarr';
 import { MediaType } from '@server/constants/media';
 import Media from '@server/entity/Media';
 import { getSettings } from '@server/lib/settings';
 import logger from '@server/logger';
-import { mapAlbumResult, mapArtistResult } from '@server/models/Music';
+import {
+  mapAlbumResult,
+  mapArtistResult,
+  mapMusicBrainzArtistResult,
+  mapMusicBrainzReleaseGroupResult,
+} from '@server/models/Music';
 import { Router } from 'express';
 
 const musicRoutes = Router();
 
+// Helper function to check if a string is a valid MBID (UUID format)
+const isMBID = (str: string): boolean => {
+  const mbidRegex =
+    /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+  return mbidRegex.test(str);
+};
+
 // Specific routes must come before parameterized routes
+// MusicBrainz artist route (handles MBID format)
+musicRoutes.get('/mbid/:mbid', async (req, res, next) => {
+  const mbid = req.params.mbid;
+
+  if (!isMBID(mbid)) {
+    return next({
+      status: 400,
+      message: 'Invalid MBID format.',
+    });
+  }
+
+  try {
+    const musicbrainz = new MusicBrainzAPI();
+    const settings = getSettings();
+
+    // Fetch artist details from MusicBrainz
+    const artistData = await musicbrainz.getArtist(mbid);
+    const artist = artistData.artist;
+
+    // Try to get artist image from Last.fm if API key is configured
+    let posterPath: string | undefined;
+    if (settings.lastfm.apiKey) {
+      try {
+        const lastfm = new LastfmAPI(settings.lastfm.apiKey);
+        const artistInfo = await lastfm.getArtistInfo(artist.name, mbid);
+
+        const posterImage =
+          artistInfo.artist.image?.find((img) => img.size === 'extralarge') ||
+          artistInfo.artist.image?.find((img) => img.size === 'large');
+
+        posterPath = posterImage?.['#text'];
+      } catch (e) {
+        logger.debug('Could not fetch artist image from Last.fm', {
+          label: 'API',
+          artistName: artist.name,
+        });
+      }
+    }
+
+    return res
+      .status(200)
+      .json(mapMusicBrainzArtistResult(artist, posterPath));
+  } catch (e) {
+    logger.error('Something went wrong retrieving artist from MusicBrainz', {
+      label: 'API',
+      errorMessage: e instanceof Error ? e.message : String(e),
+      mbid,
+    });
+    return next({
+      status: 500,
+      message: 'Unable to retrieve artist from MusicBrainz.',
+    });
+  }
+});
+
+// MusicBrainz artist albums route
+musicRoutes.get('/mbid/:mbid/albums', async (req, res, next) => {
+  const mbid = req.params.mbid;
+
+  if (!isMBID(mbid)) {
+    return next({
+      status: 400,
+      message: 'Invalid MBID format.',
+    });
+  }
+
+  try {
+    const musicbrainz = new MusicBrainzAPI();
+
+    // Fetch artist details first to get the artist name
+    const artistData = await musicbrainz.getArtist(mbid);
+    const artist = artistData.artist;
+
+    // Fetch release groups (albums, singles, etc.)
+    const releaseGroupsData = await musicbrainz.getArtistReleaseGroups(mbid, {
+      type: ['album', 'ep'],
+      limit: 100,
+    });
+
+    // Generate artist ID from MBID for consistency
+    const simpleHash = (str: string): number => {
+      let hash = 0;
+      for (let i = 0; i < str.length; i++) {
+        const char = str.charCodeAt(i);
+        hash = (hash << 5) - hash + char;
+        hash = hash & hash;
+      }
+      return Math.abs(hash);
+    };
+    const artistId = simpleHash(mbid);
+
+    const mappedAlbums = releaseGroupsData['release-groups'].map(
+      (releaseGroup) =>
+        mapMusicBrainzReleaseGroupResult(
+          releaseGroup,
+          artistId,
+          artist.name,
+          undefined // We don't have cover art URLs from MusicBrainz directly
+        )
+    );
+
+    return res.status(200).json(mappedAlbums);
+  } catch (e) {
+    logger.error(
+      'Something went wrong retrieving albums from MusicBrainz',
+      {
+        label: 'API',
+        errorMessage: e instanceof Error ? e.message : String(e),
+        mbid,
+      }
+    );
+    return next({
+      status: 500,
+      message: 'Unable to retrieve albums from MusicBrainz.',
+    });
+  }
+});
+
 musicRoutes.get('/album/:albumId', async (req, res, next) => {
   const settings = getSettings();
 

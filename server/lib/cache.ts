@@ -6,6 +6,7 @@ export type AvailableCacheIds =
   | 'sonarr'
   | 'lidarr'
   | 'lastfm'
+  | 'musicbrainz'
   | 'rt'
   | 'imdb'
   | 'github'
@@ -55,6 +56,10 @@ class CacheManager {
     lastfm: new Cache('lastfm', 'Last.fm API', {
       stdTtl: 3600, // 1 hour cache for charts
       checkPeriod: 60 * 15,
+    }),
+    musicbrainz: new Cache('musicbrainz', 'MusicBrainz API', {
+      stdTtl: 86400, // 24 hour cache for artist/album data
+      checkPeriod: 60 * 30,
     }),
     rt: new Cache('rt', 'Rotten Tomatoes API', {
       stdTtl: 43200,

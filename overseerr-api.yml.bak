@@ -324,13 +324,6 @@ components:
         externalUrl:
           type: string
           nullable: true
-    LastfmSettings:
-      type: object
-      properties:
-        apiKey:
-          type: string
-          nullable: true
-          example: 'your_lastfm_api_key'
     RadarrSettings:
       type: object
       properties:
@@ -2216,37 +2209,6 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/TautulliSettings'
-  /settings/lastfm:
-    get:
-      summary: Get Last.fm settings
-      description: Retrieves current Last.fm settings.
-      tags:
-        - settings
-      responses:
-        '200':
-          description: OK
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/LastfmSettings'
-    post:
-      summary: Update Last.fm settings
-      description: Updates Last.fm settings with the provided values.
-      tags:
-        - settings
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/LastfmSettings'
-      responses:
-        '200':
-          description: 'Values were successfully updated'
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/LastfmSettings'
   /settings/radarr:
     get:
       summary: Get Radarr settings
@@ -5211,130 +5173,6 @@ paths:
                         albumCount:
                           type: number
                           example: 10
-  /discover/music/lastfm/top-artists:
-    get:
-      summary: Get Last.fm top artists
-      description: Returns a list of globally popular artists from Last.fm.
-      tags:
-        - search
-      parameters:
-        - in: query
-          name: page
-          schema:
-            type: number
-            example: 1
-            default: 1
-      responses:
-        '200':
-          description: Results
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  page:
-                    type: number
-                  totalPages:
-                    type: number
-                  totalResults:
-                    type: number
-                  results:
-                    type: array
-                    items:
-                      type: object
-  /discover/music/lastfm/top-albums:
-    get:
-      summary: Get Last.fm top albums
-      description: Returns a list of globally popular albums from Last.fm.
-      tags:
-        - search
-      parameters:
-        - in: query
-          name: page
-          schema:
-            type: number
-            example: 1
-            default: 1
-      responses:
-        '200':
-          description: Results
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  page:
-                    type: number
-                  totalPages:
-                    type: number
-                  totalResults:
-                    type: number
-                  results:
-                    type: array
-                    items:
-                      type: object
-  /discover/music/lastfm/top-tracks:
-    get:
-      summary: Get Last.fm top tracks
-      description: Returns a list of globally popular tracks from Last.fm.
-      tags:
-        - search
-      parameters:
-        - in: query
-          name: page
-          schema:
-            type: number
-            example: 1
-            default: 1
-      responses:
-        '200':
-          description: Results
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  page:
-                    type: number
-                  totalPages:
-                    type: number
-                  totalResults:
-                    type: number
-                  results:
-                    type: array
-                    items:
-                      type: object
-  /discover/music/lastfm/trending-artists:
-    get:
-      summary: Get Last.fm trending artists
-      description: Returns a list of trending artists from Last.fm.
-      tags:
-        - search
-      parameters:
-        - in: query
-          name: page
-          schema:
-            type: number
-            example: 1
-            default: 1
-      responses:
-        '200':
-          description: Results
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  page:
-                    type: number
-                  totalPages:
-                    type: number
-                  totalResults:
-                    type: number
-                  results:
-                    type: array
-                    items:
-                      type: object
   /discover/keyword/{keywordId}/movies:
     get:
       summary: Get movies from keyword
@@ -6176,67 +6014,6 @@ paths:
                   criticsRating:
                     type: string
                     enum: ['Rotten', 'Fresh']
-  /music/album/{albumId}:
-    get:
-      summary: Get album details
-      description: Returns album details from Lidarr based on provided albumId.
-      tags:
-        - music
-      parameters:
-        - in: path
-          name: albumId
-          required: true
-          schema:
-            type: number
-            example: 1
-      responses:
-        '200':
-          description: Album details returned
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  id:
-                    type: number
-                    example: 1
-                  mediaType:
-                    type: string
-                    example: album
-                  title:
-                    type: string
-                    example: Album Title
-                  foreignId:
-                    type: string
-                    example: album-mbid-123
-                  artistId:
-                    type: number
-                    example: 1
-                  artistName:
-                    type: string
-                    example: Artist Name
-                  overview:
-                    type: string
-                    example: Album description
-                  posterPath:
-                    type: string
-                    example: https://example.com/cover.jpg
-                  trackCount:
-                    type: number
-                    example: 12
-                  albumType:
-                    type: string
-                    example: Album
-                  duration:
-                    type: number
-                    example: 2400
-                  disambiguation:
-                    type: string
-                    example: '2020 remaster'
-        '404':
-          description: Album not found
-        '500':
-          description: Unable to retrieve album
   /music/{artistId}:
     get:
       summary: Get artist details
@@ -6281,54 +6058,6 @@ paths:
                     example: 10
         '404':
           description: Artist not found
-  /music/album/{albumId}/tracks:
-    get:
-      summary: Get tracks for an album
-      description: Returns a list of tracks for the specified album from Lidarr.
-      tags:
-        - music
-      parameters:
-        - in: path
-          name: albumId
-          required: true
-          schema:
-            type: number
-            example: 1
-      responses:
-        '200':
-          description: List of tracks
-          content:
-            application/json:
-              schema:
-                type: array
-                items:
-                  type: object
-                  properties:
-                    id:
-                      type: number
-                      example: 1
-                    trackNumber:
-                      type: string
-                      example: "1"
-                    title:
-                      type: string
-                      example: Track Title
-                    explicit:
-                      type: boolean
-                      example: false
-                    hasFile:
-                      type: boolean
-                      example: true
-                    duration:
-                      type: number
-                      example: 180000
-                    mediumNumber:
-                      type: number
-                      example: 1
-        '404':
-          description: Album not found
-        '500':
-          description: Unable to retrieve tracks
   /music/{artistId}/albums:
     get:
       summary: Get albums by artist
@@ -6379,108 +6108,6 @@ paths:
                     trackCount:
                       type: number
                       example: 12
-        '404':
-          description: Artist not found
-  /music/mbid/{mbid}:
-    get:
-      summary: Get artist details from MusicBrainz
-      description: Returns artist details from MusicBrainz using MBID in a JSON object.
-      tags:
-        - music
-      parameters:
-        - in: path
-          name: mbid
-          required: true
-          schema:
-            type: string
-            format: uuid
-            example: 83d91898-7763-47d7-b03b-b92132375c47
-      responses:
-        '200':
-          description: Artist details
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  id:
-                    type: number
-                    example: 1234567
-                  mediaType:
-                    type: string
-                    example: artist
-                  name:
-                    type: string
-                    example: Artist Name
-                  foreignId:
-                    type: string
-                    example: 83d91898-7763-47d7-b03b-b92132375c47
-                  overview:
-                    type: string
-                    example: rock, pop, indie
-                  posterPath:
-                    type: string
-                    example: https://lastfm.freetls.fastly.net/i/u/300x300/artist.jpg
-                  artistType:
-                    type: string
-                    example: Person
-                  albumCount:
-                    type: number
-                    example: 15
-        '400':
-          description: Invalid MBID format
-        '404':
-          description: Artist not found
-  /music/mbid/{mbid}/albums:
-    get:
-      summary: Get artist albums from MusicBrainz
-      description: Returns artist's albums from MusicBrainz using MBID in a JSON array.
-      tags:
-        - music
-      parameters:
-        - in: path
-          name: mbid
-          required: true
-          schema:
-            type: string
-            format: uuid
-            example: 83d91898-7763-47d7-b03b-b92132375c47
-      responses:
-        '200':
-          description: Artist albums
-          content:
-            application/json:
-              schema:
-                type: array
-                items:
-                  type: object
-                  properties:
-                    id:
-                      type: number
-                      example: 9876543
-                    mediaType:
-                      type: string
-                      example: album
-                    title:
-                      type: string
-                      example: Album Title
-                    foreignId:
-                      type: string
-                      example: f5093c06-23e3-404f-aeaa-40f72885ee3a
-                    artistId:
-                      type: number
-                      example: 1234567
-                    artistName:
-                      type: string
-                      example: Artist Name
-                    overview:
-                      type: string
-                      example: rock, indie
-                    albumType:
-                      type: string
-                      example: Album
-        '400':
-          description: Invalid MBID format
         '404':
           description: Artist not found
   /person/{personId}:

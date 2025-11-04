@@ -24,8 +24,17 @@ interface ArtistDetailsProps {
 const ArtistDetails = ({ artist }: ArtistDetailsProps) => {
   const intl = useIntl();
 
+  // Check if foreignId is a UUID (MBID) or if we should use the numeric ID
+  const isMBID = artist?.foreignId && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(artist.foreignId);
+
+  const albumsEndpoint = artist
+    ? isMBID
+      ? `/api/v1/music/mbid/${artist.foreignId}/albums`
+      : `/api/v1/music/${artist.id}/albums`
+    : null;
+
   const { data: albumData, error: albumError } = useSWR<AlbumResult[]>(
-    artist ? `/api/v1/music/${artist.id}/albums` : null
+    albumsEndpoint
   );
 
   if (!artist) {

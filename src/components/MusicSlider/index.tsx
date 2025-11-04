@@ -64,10 +64,12 @@ const MusicSlider = ({
   const finalTitles = titles.slice(0, 20).map((item) => {
     if (item.mediaType === 'artist') {
       const artist = item as ArtistResult;
+      // Use foreignId (MBID) if available, otherwise use numeric ID
+      const artistId = artist.foreignId || artist.id;
       return (
         <TitleCard
           key={`artist-${artist.id}`}
-          id={artist.id}
+          id={artistId}
           image={artist.posterPath}
           status={artist.mediaInfo?.status}
           summary={artist.overview}
