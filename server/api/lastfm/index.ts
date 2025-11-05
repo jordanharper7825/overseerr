@@ -174,7 +174,7 @@ class LastfmAPI extends ExternalAPI {
   }
 
   /**
-   * Get new releases (using '2025' tag for recent albums)
+   * Get new releases (using '2024' tag for recent albums)
    */
   public async getNewReleases(
     options: GetTopAlbumsOptions = {}
@@ -186,7 +186,7 @@ class LastfmAPI extends ExternalAPI {
       {
         params: {
           method: 'tag.gettopalbums',
-          tag: '2025',
+          tag: '2024',
           page,
           limit,
         },

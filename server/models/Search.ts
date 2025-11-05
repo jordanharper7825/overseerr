@@ -16,7 +16,8 @@ export type MediaType =
   | 'person'
   | 'collection'
   | 'artist'
-  | 'album';
+  | 'album'
+  | 'track';
 
 interface SearchResult {
   id: number;

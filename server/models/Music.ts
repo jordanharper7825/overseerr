@@ -10,7 +10,7 @@ import type {
 import type { LidarrAlbum, LidarrArtist } from '@server/api/servarr/lidarr';
 import type Media from '@server/entity/Media';
 
-export type MusicMediaType = 'artist' | 'album';
+export type MusicMediaType = 'artist' | 'album' | 'track';
 
 interface MusicSearchResult {
   id: number;
@@ -187,7 +187,7 @@ export const mapLastfmAlbumResult = (
 };
 
 export interface TrackResult extends MusicSearchResult {
-  mediaType: 'album'; // Tracks are represented as albums in our UI
+  mediaType: 'track';
   title: string;
   foreignId: string;
   artistId: number;
@@ -208,7 +208,7 @@ export const mapLastfmTrackResult = (
     ? simpleHash(track.artist.mbid)
     : simpleHash(track.artist.name);
 
-  // Get largest image
+  // Get largest image - tracks often don't have images in Last.fm
   const coverImage =
     track.image?.find((img) => img.size === 'extralarge') ||
     track.image?.find((img) => img.size === 'large') ||
@@ -216,7 +216,7 @@ export const mapLastfmTrackResult = (
 
   return {
     id,
-    mediaType: 'album', // Represent tracks as albums for UI consistency
+    mediaType: 'track',
     title: track.name,
     foreignId: track.mbid || '',
     artistId,

@@ -151,6 +151,8 @@ const TitleCard = ({
                   ? 'border-green-500 bg-green-600'
                   : mediaType === 'album'
                   ? 'border-yellow-500 bg-yellow-600'
+                  : mediaType === 'track'
+                  ? 'border-pink-500 bg-pink-600'
                   : 'border-purple-600 bg-purple-600'
               }`}
             >
@@ -163,6 +165,8 @@ const TitleCard = ({
                   ? 'Artist'
                   : mediaType === 'album'
                   ? 'Album'
+                  : mediaType === 'track'
+                  ? 'Track'
                   : intl.formatMessage(globalMessages.tvshow)}
               </div>
             </div>
