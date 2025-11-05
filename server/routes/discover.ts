@@ -1278,7 +1278,10 @@ discoverRoutes.get('/music/lastfm/top-artists', async (req, res) => {
     const page = Number(req.query.page) || 1;
     const limit = 50;
 
-    const data = await lastfm.getChartTopArtists({ page, limit });
+    const data = await lastfm.getTopArtistsByCountry('United States', {
+      page,
+      limit,
+    });
 
     // Fetch individual artist info for the first 20 to get real images
     const artistsToEnhance = data.artists.artist.slice(0, 20);
@@ -1423,7 +1426,10 @@ discoverRoutes.get('/music/lastfm/top-tracks', async (req, res) => {
     const page = Number(req.query.page) || 1;
     const limit = 50;
 
-    const data = await lastfm.getChartTopTracks({ page, limit });
+    const data = await lastfm.getTopTracksByCountry('United States', {
+      page,
+      limit,
+    });
 
     const mappedResults = data.tracks.track.map((track) =>
       mapLastfmTrackResult(track)

@@ -194,6 +194,52 @@ class LastfmAPI extends ExternalAPI {
       3600 // Cache for 1 hour
     );
   }
+
+  /**
+   * Get top artists by country
+   */
+  public async getTopArtistsByCountry(
+    country: string,
+    options: GetTopArtistsOptions = {}
+  ): Promise<LastfmChartTopArtistsResponse> {
+    const { page = 1, limit = 50 } = options;
+
+    return this.get<LastfmChartTopArtistsResponse>(
+      '/',
+      {
+        params: {
+          method: 'geo.gettopartists',
+          country,
+          page,
+          limit,
+        },
+      },
+      3600 // Cache for 1 hour
+    );
+  }
+
+  /**
+   * Get top tracks by country
+   */
+  public async getTopTracksByCountry(
+    country: string,
+    options: GetTopTracksOptions = {}
+  ): Promise<LastfmChartTopTracksResponse> {
+    const { page = 1, limit = 50 } = options;
+
+    return this.get<LastfmChartTopTracksResponse>(
+      '/',
+      {
+        params: {
+          method: 'geo.gettoptracks',
+          country,
+          page,
+          limit,
+        },
+      },
+      3600 // Cache for 1 hour
+    );
+  }
 }
 
 export default LastfmAPI;

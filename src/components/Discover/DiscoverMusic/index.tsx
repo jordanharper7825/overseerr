@@ -24,18 +24,6 @@ const DiscoverMusic = () => {
       </div>
 
       <MusicSlider
-        sliderKey="lastfm-popular-songs"
-        title={intl.formatMessage(messages.popularSongs)}
-        url="/api/v1/discover/music/lastfm/top-tracks"
-      />
-
-      <MusicSlider
-        sliderKey="lastfm-popular-albums"
-        title={intl.formatMessage(messages.popularAlbums)}
-        url="/api/v1/discover/music/lastfm/top-albums"
-      />
-
-      <MusicSlider
         sliderKey="lastfm-new-releases"
         title={intl.formatMessage(messages.newReleases)}
         url="/api/v1/discover/music/lastfm/new-releases"
@@ -45,6 +33,18 @@ const DiscoverMusic = () => {
         sliderKey="lastfm-popular-artists"
         title={intl.formatMessage(messages.popularArtists)}
         url="/api/v1/discover/music/lastfm/top-artists"
+      />
+
+      <MusicSlider
+        sliderKey="lastfm-popular-albums"
+        title={intl.formatMessage(messages.popularAlbums)}
+        url="/api/v1/discover/music/lastfm/top-albums"
+      />
+
+      <MusicSlider
+        sliderKey="lastfm-popular-songs"
+        title={intl.formatMessage(messages.popularSongs)}
+        url="/api/v1/discover/music/lastfm/top-tracks"
       />
 
       <MusicSlider
