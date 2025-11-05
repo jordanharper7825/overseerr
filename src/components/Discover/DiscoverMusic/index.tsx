@@ -5,9 +5,8 @@ import { defineMessages, useIntl } from 'react-intl';
 
 const messages = defineMessages({
   discovermusic: 'Music',
-  popularArtists: 'Popular Artists',
-  popularAlbums: 'Popular Albums',
-  popularSongs: 'Popular Songs',
+  hotRightNow: 'Hot Right Now',
+  popularTracks: 'Popular Tracks',
   newReleases: 'New Releases',
   moreFromArtistsYouFollow: 'More from Artists You Follow',
 });
@@ -24,27 +23,21 @@ const DiscoverMusic = () => {
       </div>
 
       <MusicSlider
-        sliderKey="lastfm-new-releases"
-        title={intl.formatMessage(messages.newReleases)}
-        url="/api/v1/discover/music/lastfm/new-releases"
-      />
-
-      <MusicSlider
-        sliderKey="lastfm-popular-artists"
-        title={intl.formatMessage(messages.popularArtists)}
+        sliderKey="lastfm-hot-right-now"
+        title={intl.formatMessage(messages.hotRightNow)}
         url="/api/v1/discover/music/lastfm/top-artists"
       />
 
       <MusicSlider
-        sliderKey="lastfm-popular-albums"
-        title={intl.formatMessage(messages.popularAlbums)}
-        url="/api/v1/discover/music/lastfm/top-albums"
+        sliderKey="lastfm-popular-tracks"
+        title={intl.formatMessage(messages.popularTracks)}
+        url="/api/v1/discover/music/lastfm/top-tracks"
       />
 
       <MusicSlider
-        sliderKey="lastfm-popular-songs"
-        title={intl.formatMessage(messages.popularSongs)}
-        url="/api/v1/discover/music/lastfm/top-tracks"
+        sliderKey="lastfm-new-releases"
+        title={intl.formatMessage(messages.newReleases)}
+        url="/api/v1/discover/music/lastfm/new-releases"
       />
 
       <MusicSlider
