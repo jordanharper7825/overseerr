@@ -173,11 +173,7 @@ export const mapLastfmAlbumResult = (
     album.image?.find((img) => img.size === 'large') ||
     album.image?.find((img) => img.size === 'medium');
 
-  // If Last.fm has no image but we have MBID, use Cover Art Archive
-  let posterPath = coverImage?.['#text'];
-  if ((!posterPath || !posterPath.trim()) && album.mbid) {
-    posterPath = `https://coverartarchive.org/release/${album.mbid}/front-500`;
-  }
+  const posterPath = coverImage?.['#text'];
 
   return {
     id,
