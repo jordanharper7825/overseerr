@@ -172,6 +172,28 @@ class LastfmAPI extends ExternalAPI {
       86400 // Cache for 24 hours
     );
   }
+
+  /**
+   * Get new releases (using 'new releases' tag)
+   */
+  public async getNewReleases(
+    options: GetTopAlbumsOptions = {}
+  ): Promise<LastfmTopAlbumsResponse> {
+    const { page = 1, limit = 50 } = options;
+
+    return this.get<LastfmTopAlbumsResponse>(
+      '/',
+      {
+        params: {
+          method: 'tag.gettopalbums',
+          tag: 'new releases',
+          page,
+          limit,
+        },
+      },
+      3600 // Cache for 1 hour
+    );
+  }
 }
 
 export default LastfmAPI;

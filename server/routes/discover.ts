@@ -16,6 +16,7 @@ import { getSettings } from '@server/lib/settings';
 import logger from '@server/logger';
 import { mapProductionCompany } from '@server/models/Movie';
 import {
+  mapAlbumResult,
   mapArtistResult,
   mapLastfmAlbumResult,
   mapLastfmArtistResult,
@@ -1363,7 +1364,9 @@ discoverRoutes.get('/music/lastfm/top-albums', async (req, res) => {
         // (Last.fm often uses artist image for album covers in charts)
         return {
           ...album,
-          image: album.image?.[0]?.['#text'] ? album.image : artistInfo.artist.image || album.image,
+          image: album.image?.[0]?.['#text']
+            ? album.image
+            : artistInfo.artist.image || album.image,
         };
       } catch (e) {
         logger.debug('Could not fetch enhanced album/artist info', {
@@ -1381,9 +1384,7 @@ discoverRoutes.get('/music/lastfm/top-albums', async (req, res) => {
     const remainingAlbums = data.albums.album.slice(20);
     const allAlbums = [...enhancedAlbums, ...remainingAlbums];
 
-    const mappedResults = allAlbums.map((album) =>
-      mapLastfmAlbumResult(album)
-    );
+    const mappedResults = allAlbums.map((album) => mapLastfmAlbumResult(album));
 
     return res.status(200).json({
       page: parseInt(data.albums['@attr'].page, 10),
@@ -1480,6 +1481,158 @@ discoverRoutes.get('/music/lastfm/trending-artists', async (req, res) => {
     });
   } catch (e) {
     logger.error('Error retrieving Last.fm trending artists', {
+      label: 'API',
+      errorMessage: e instanceof Error ? e.message : String(e),
+    });
+    return res.status(200).json({
+      page: 1,
+      totalPages: 1,
+      totalResults: 0,
+      results: [],
+    });
+  }
+});
+
+discoverRoutes.get('/music/lastfm/new-releases', async (req, res) => {
+  try {
+    const settings = getSettings();
+
+    if (!settings.lastfm.apiKey) {
+      return res.status(200).json({
+        page: 1,
+        totalPages: 1,
+        totalResults: 0,
+        results: [],
+      });
+    }
+
+    const lastfm = new LastfmAPI(settings.lastfm.apiKey);
+    const page = Number(req.query.page) || 1;
+    const limit = 50;
+
+    const data = await lastfm.getNewReleases({ page, limit });
+
+    // Fetch individual artist info for the first 20 albums to get better images
+    const albumsToEnhance = data.albums.album.slice(0, 20);
+    const enhancedAlbumsPromises = albumsToEnhance.map(async (album) => {
+      try {
+        const artistInfo = await lastfm.getArtistInfo(
+          album.artist.name,
+          album.artist.mbid || undefined
+        );
+        return {
+          ...album,
+          image: album.image?.[0]?.['#text']
+            ? album.image
+            : artistInfo.artist.image || album.image,
+        };
+      } catch (e) {
+        logger.debug('Could not fetch enhanced album/artist info', {
+          label: 'API',
+          albumName: album.name,
+        });
+        return album;
+      }
+    });
+
+    const enhancedAlbums = await Promise.all(enhancedAlbumsPromises);
+    const remainingAlbums = data.albums.album.slice(20);
+    const allAlbums = [...enhancedAlbums, ...remainingAlbums];
+
+    const mappedResults = allAlbums.map((album) => mapLastfmAlbumResult(album));
+
+    return res.status(200).json({
+      page: parseInt(data.albums['@attr'].page, 10),
+      totalPages: parseInt(data.albums['@attr'].totalPages, 10),
+      totalResults: parseInt(data.albums['@attr'].total, 10),
+      results: mappedResults,
+    });
+  } catch (e) {
+    logger.error('Error retrieving Last.fm new releases', {
+      label: 'API',
+      errorMessage: e instanceof Error ? e.message : String(e),
+    });
+    return res.status(200).json({
+      page: 1,
+      totalPages: 1,
+      totalResults: 0,
+      results: [],
+    });
+  }
+});
+
+discoverRoutes.get('/music/artists-you-follow/albums', async (req, res) => {
+  try {
+    const settings = getSettings();
+
+    if (!settings.lidarr || settings.lidarr.length === 0) {
+      return res.status(200).json({
+        page: 1,
+        totalPages: 1,
+        totalResults: 0,
+        results: [],
+      });
+    }
+
+    const lidarrSettings = settings.lidarr.find((lidarr) => lidarr.isDefault);
+
+    if (!lidarrSettings) {
+      return res.status(200).json({
+        page: 1,
+        totalPages: 1,
+        totalResults: 0,
+        results: [],
+      });
+    }
+
+    const apiUrl = LidarrAPI.buildUrl(lidarrSettings, '/api/v1');
+    logger.info('Fetching albums from artists you follow', { label: 'API' });
+
+    const lidarr = new LidarrAPI({
+      apiKey: lidarrSettings.apiKey,
+      url: apiUrl,
+    });
+
+    // Get all artists from Lidarr
+    const artists = await lidarr.getArtists();
+
+    // Get all albums from all artists
+    const allAlbumsPromises = artists.map(async (artist) => {
+      try {
+        const albums = await lidarr.getAlbumsByArtist(artist.id);
+        return albums;
+      } catch (e) {
+        logger.debug('Could not fetch albums for artist', {
+          label: 'API',
+          artistName: artist.artistName,
+        });
+        return [];
+      }
+    });
+
+    const allAlbums = (await Promise.all(allAlbumsPromises)).flat();
+
+    // Sort by album ID (newest first - higher ID typically means more recent)
+    const sortedAlbums = allAlbums.sort((a, b) => b.id - a.id);
+
+    // Pagination
+    const page = Number(req.query.page) || 1;
+    const limit = 20;
+    const startIndex = (page - 1) * limit;
+    const endIndex = startIndex + limit;
+    const paginatedAlbums = sortedAlbums.slice(startIndex, endIndex);
+
+    // Map to AlbumResult format
+    const mappedResults = paginatedAlbums.map((album) => mapAlbumResult(album));
+
+    return res.status(200).json({
+      page,
+      totalPages: Math.ceil(sortedAlbums.length / limit),
+      totalResults: sortedAlbums.length,
+      results: mappedResults,
+    });
+  } catch (e) {
+    logger.error('Error retrieving albums from artists you follow', {
       label: 'API',
       errorMessage: e instanceof Error ? e.message : String(e),
     });

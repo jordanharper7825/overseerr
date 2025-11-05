@@ -5,12 +5,11 @@ import { defineMessages, useIntl } from 'react-intl';
 
 const messages = defineMessages({
   discovermusic: 'Music',
-  topArtists: 'Top 50 Artists',
-  topAlbums: 'Top 50 Albums',
-  topTracks: 'Top 50 Tracks',
-  trendingArtists: 'Trending Artists',
-  recentAlbums: 'Recently Added Albums',
-  myArtists: 'My Artists',
+  topArtists: 'Top Artists',
+  topAlbums: 'Top Albums',
+  topSongs: 'Top Songs',
+  newReleases: 'New Releases',
+  moreFromArtistsYouFollow: 'More from Artists You Follow',
 });
 
 const DiscoverMusic = () => {
@@ -25,9 +24,9 @@ const DiscoverMusic = () => {
       </div>
 
       <MusicSlider
-        sliderKey="lastfm-top-artists"
-        title={intl.formatMessage(messages.topArtists)}
-        url="/api/v1/discover/music/lastfm/top-artists"
+        sliderKey="lastfm-top-songs"
+        title={intl.formatMessage(messages.topSongs)}
+        url="/api/v1/discover/music/lastfm/top-tracks"
       />
 
       <MusicSlider
@@ -37,28 +36,15 @@ const DiscoverMusic = () => {
       />
 
       <MusicSlider
-        sliderKey="lastfm-top-tracks"
-        title={intl.formatMessage(messages.topTracks)}
-        url="/api/v1/discover/music/lastfm/top-tracks"
+        sliderKey="lastfm-new-releases"
+        title={intl.formatMessage(messages.newReleases)}
+        url="/api/v1/discover/music/lastfm/new-releases"
       />
 
       <MusicSlider
-        sliderKey="lastfm-trending-artists"
-        title={intl.formatMessage(messages.trendingArtists)}
-        url="/api/v1/discover/music/lastfm/trending-artists"
-      />
-
-      <MusicSlider
-        sliderKey="recent-albums"
-        title={intl.formatMessage(messages.recentAlbums)}
-        url="/api/v1/discover/music/recent-albums"
-      />
-
-      <MusicSlider
-        sliderKey="my-artists"
-        title={intl.formatMessage(messages.myArtists)}
-        url="/api/v1/discover/music"
-        linkUrl="/discover/music?sortBy=name"
+        sliderKey="more-from-artists-you-follow"
+        title={intl.formatMessage(messages.moreFromArtistsYouFollow)}
+        url="/api/v1/discover/music/artists-you-follow/albums"
       />
     </>
   );
