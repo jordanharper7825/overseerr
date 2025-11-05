@@ -85,13 +85,7 @@ const TitleCard = ({
 
   return (
     <div
-      className={
-        canExpand
-          ? 'w-full'
-          : mediaType === 'artist' || mediaType === 'album'
-          ? 'w-40 sm:w-44 md:w-52'
-          : 'w-36 sm:w-36 md:w-44'
-      }
+      className={canExpand ? 'w-full' : 'w-36 sm:w-36 md:w-44'}
       data-testid="title-card"
     >
       {mediaType !== 'artist' && mediaType !== 'album' && (
@@ -248,7 +242,7 @@ const TitleCard = ({
                         style={{
                           WebkitLineClamp:
                             mediaType === 'artist' || mediaType === 'album'
-                              ? 2
+                              ? 4
                               : 3,
                           display: '-webkit-box',
                           overflow: 'hidden',
