@@ -1623,7 +1623,9 @@ discoverRoutes.get('/music/artists-you-follow/albums', async (req, res) => {
     const paginatedAlbums = sortedAlbums.slice(startIndex, endIndex);
 
     // Map to AlbumResult format
-    const mappedResults = paginatedAlbums.map((album) => mapAlbumResult(album));
+    const mappedResults = paginatedAlbums.map((album) =>
+      mapAlbumResult(album, undefined, apiUrl)
+    );
 
     return res.status(200).json({
       page,

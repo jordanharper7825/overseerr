@@ -167,11 +167,17 @@ export const mapLastfmAlbumResult = (
     ? simpleHash(album.artist.mbid)
     : simpleHash(album.artist.name);
 
-  // Get largest image
+  // Get largest image from Last.fm
   const coverImage =
     album.image?.find((img) => img.size === 'extralarge') ||
     album.image?.find((img) => img.size === 'large') ||
     album.image?.find((img) => img.size === 'medium');
+
+  // If Last.fm has no image but we have MBID, use Cover Art Archive
+  let posterPath = coverImage?.['#text'];
+  if ((!posterPath || !posterPath.trim()) && album.mbid) {
+    posterPath = `https://coverartarchive.org/release/${album.mbid}/front-500`;
+  }
 
   return {
     id,
@@ -181,7 +187,7 @@ export const mapLastfmAlbumResult = (
     artistId,
     artistName: album.artist.name,
     overview: '', // Last.fm doesn't provide overview in chart endpoints
-    posterPath: coverImage?.['#text'],
+    posterPath,
     mediaInfo: media,
   };
 };
