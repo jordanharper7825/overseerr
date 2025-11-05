@@ -5,9 +5,9 @@ import { defineMessages, useIntl } from 'react-intl';
 
 const messages = defineMessages({
   discovermusic: 'Music',
-  topArtists: 'Top Artists',
-  topAlbums: 'Top Albums',
-  topSongs: 'Top Songs',
+  popularArtists: 'Popular Artists',
+  popularAlbums: 'Popular Albums',
+  popularSongs: 'Popular Songs',
   newReleases: 'New Releases',
   moreFromArtistsYouFollow: 'More from Artists You Follow',
 });
@@ -24,14 +24,14 @@ const DiscoverMusic = () => {
       </div>
 
       <MusicSlider
-        sliderKey="lastfm-top-songs"
-        title={intl.formatMessage(messages.topSongs)}
+        sliderKey="lastfm-popular-songs"
+        title={intl.formatMessage(messages.popularSongs)}
         url="/api/v1/discover/music/lastfm/top-tracks"
       />
 
       <MusicSlider
-        sliderKey="lastfm-top-albums"
-        title={intl.formatMessage(messages.topAlbums)}
+        sliderKey="lastfm-popular-albums"
+        title={intl.formatMessage(messages.popularAlbums)}
         url="/api/v1/discover/music/lastfm/top-albums"
       />
 
@@ -39,6 +39,12 @@ const DiscoverMusic = () => {
         sliderKey="lastfm-new-releases"
         title={intl.formatMessage(messages.newReleases)}
         url="/api/v1/discover/music/lastfm/new-releases"
+      />
+
+      <MusicSlider
+        sliderKey="lastfm-popular-artists"
+        title={intl.formatMessage(messages.popularArtists)}
+        url="/api/v1/discover/music/lastfm/top-artists"
       />
 
       <MusicSlider
