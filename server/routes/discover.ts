@@ -1278,7 +1278,7 @@ discoverRoutes.get('/music/lastfm/top-artists', async (req, res) => {
     const page = Number(req.query.page) || 1;
     const limit = 50;
 
-    const data = await lastfm.getTopArtistsByCountry('United States', {
+    const data = await lastfm.getTopArtistsByCountry('united states', {
       page,
       limit,
     });
@@ -1426,7 +1426,7 @@ discoverRoutes.get('/music/lastfm/top-tracks', async (req, res) => {
     const page = Number(req.query.page) || 1;
     const limit = 50;
 
-    const data = await lastfm.getTopTracksByCountry('United States', {
+    const data = await lastfm.getTopTracksByCountry('united states', {
       page,
       limit,
     });

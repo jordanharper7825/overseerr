@@ -85,7 +85,7 @@ class LastfmAPI extends ExternalAPI {
   }
 
   /**
-   * Get top albums globally (using tag-based approach as Last.fm doesn't have a direct chart.gettopalbums)
+   * Get top albums globally (using 'pop' tag for current popular albums)
    */
   public async getTopAlbums(
     options: GetTopAlbumsOptions = {}
@@ -97,7 +97,7 @@ class LastfmAPI extends ExternalAPI {
       {
         params: {
           method: 'tag.gettopalbums',
-          tag: 'all',
+          tag: 'pop',
           page,
           limit,
         },
@@ -174,7 +174,7 @@ class LastfmAPI extends ExternalAPI {
   }
 
   /**
-   * Get new releases (using 'new releases' tag)
+   * Get new releases (using '2025' tag for recent albums)
    */
   public async getNewReleases(
     options: GetTopAlbumsOptions = {}
@@ -186,7 +186,7 @@ class LastfmAPI extends ExternalAPI {
       {
         params: {
           method: 'tag.gettopalbums',
-          tag: 'new releases',
+          tag: '2025',
           page,
           limit,
         },
